@@ -62,6 +62,16 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
 .bar-fill{height:100%;border-radius:99px;transition:width .5s ease;}
 .bar-val{width:28px;text-align:right;font-size:11px;color:var(--ink-ghost);font-family:var(--font-mono);flex-shrink:0;}
 
+/* ── CONTEXT HERO ── */
+.context-hero{background:linear-gradient(135deg,var(--surface2) 0%,rgba(124,106,247,0.08) 100%);border:1px solid var(--border);border-radius:var(--r-xl);padding:32px 36px;margin-bottom:28px;position:relative;overflow:hidden;box-shadow:0 12px 32px rgba(0,0,0,0.15);}
+.context-hero::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent);}
+.ch-badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;}
+.ch-badge-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent);animation:pulse 2s infinite;}
+.ch-title{font-family:var(--font-serif);font-size:34px;color:var(--ink);line-height:1.2;margin-bottom:22px;letter-spacing:-0.5px;}
+.ch-actions{display:flex;gap:12px;flex-wrap:wrap;}
+.btn-hero{all:unset;padding:12px 24px;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;background:var(--accent);color:#fff;box-shadow:0 8px 24px var(--accent-glow);display:flex;align-items:center;gap:8px;}
+.btn-hero:hover{transform:translateY(-2px);box-shadow:0 12px 32px var(--accent-glow);}
+
 /* ── MAIN ── */
 .main{padding:40px 48px;max-width:960px;width:100%;}
 .page-header{margin-bottom:32px;}
@@ -566,7 +576,7 @@ let calDate     = new Date();
 let selectedDay = null;
 let facCatFilter = 'all';
 let facSearchQ   = '';
-let timerState  = {taskId:null,totalSeconds:25*60,remaining:25*60,running:false,interval:null};
+let timerState  = {taskId:null,totalSeconds:25*60,remaining:25*60,running:false,interval:null,customTitle:null};
 let noteState   = {id:null,color:'nc-default',pinned:false};
 let facNoteState= {id:null,color:'nc-default',pinned:false};
 
@@ -822,14 +832,46 @@ function renderTodayPage(){
   const todaySessions=data.sessions.filter(s=>s.date===today);
   const todayMins=todaySessions.reduce((s,e)=>s+e.minutes,0);
   const todayEvs=data.events.filter(e=>e.date===today).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+
+  // Context Hero Logic
+  const now = new Date();
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+  let activeEv = null, nextEv = null, ctxType = 'none';
+
+  for(const ev of todayEvs){
+    if(!ev.time) continue;
+    const [h,m] = ev.time.split(':').map(Number);
+    const evMins = h*60 + m;
+    // Considera ativo 15 min antes e dura 2h (assumindo aulas de bloco 2h padrão)
+    if(currentMins >= evMins - 15 && currentMins <= evMins + 120){ activeEv=ev; ctxType='active'; break; }
+    else if(evMins > currentMins && !nextEv){ nextEv=ev; ctxType='next'; }
+  }
+
+  const targetEv = activeEv || nextEv;
+  let heroHTML = '';
+  if(targetEv){
+    const badge = ctxType === 'active' 
+      ? `<div class="ch-badge"><div class="ch-badge-dot"></div> A decorrer agora</div>` 
+      : `<div class="ch-badge">A seguir às ${targetEv.time}</div>`;
+    heroHTML = `<div class="context-hero">
+      ${badge}
+      <h2 class="ch-title">${escapeHTML(targetEv.title)}</h2>
+      <div class="ch-actions">
+        <button class="btn-hero" data-action="context-note" data-title="${escapeHTML(targetEv.title)}">📝 Começar Apontamentos</button>
+        <button class="btn btn-ghost" style="background:var(--surface);border:1px solid var(--border)" data-action="timer-custom" data-title="${escapeHTML(targetEv.title)}">⏱️ Iniciar Foco</button>
+      </div>
+    </div>`;
+  }
+
   const strip=`<div class="today-strip">
     <div class="strip-card"><div class="sc-label">Pendentes</div><div class="sc-value">${list.length}</div><div class="sc-sub">tarefas para hoje</div></div>
     <div class="strip-card"><div class="sc-label">Concluídas</div><div class="sc-value">${done}</div><div class="sc-sub">de ${data.tasks.length} total</div></div>
     <div class="strip-card"><div class="sc-label">Tempo hoje</div><div class="sc-value">${todayMins}m</div><div class="sc-sub">${todaySessions.length} sessão(ões)</div></div>
   </div>`;
-  const evSection=todayEvs.length?`<div class="card" style="margin-bottom:24px"><div class="card-title">📅 Eventos de hoje</div><div class="ev-list">${todayEvs.map(evRowHTML).join('')}</div></div>`:'';
+  const evSection=todayEvs.length?`<div class="card" style="margin-bottom:24px"><div class="card-title">📅 O teu dia</div><div class="ev-list">${todayEvs.map(evRowHTML).join('')}</div></div>`:'';
   const rows=list.length?list.map(taskRowHTML).join(''):`<div class="empty"><span class="empty-icon">✦</span>Nenhuma tarefa pendente!</div>`;
-  return `<div class="page-header"><div class="page-eyebrow">${new Date().toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'})}</div><h1 class="page-title"><em>${greet()}</em></h1><p class="page-sub">Aqui está o teu dia.</p></div>${strip}${evSection}<div class="task-list">${rows}</div>`;
+  
+  return `<div class="page-header"><div class="page-eyebrow">${now.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'})}</div><h1 class="page-title"><em>${greet()}</em></h1><p class="page-sub">O teu painel de controlo.</p></div>${heroHTML}${strip}${evSection}<div class="card"><div class="card-title">Tarefas pendentes</div><div class="task-list">${rows}</div></div>`;
 }
 
 /* ════════════════════════════════════════
@@ -1055,6 +1097,14 @@ function attachHandlers(){
   document.querySelectorAll('[data-action="delete-event"]').forEach(b=>b.onclick=()=>deleteEvent(b.dataset.id));
   document.querySelectorAll('[data-action="open-note"]').forEach(b=>b.onclick=()=>openNote(b.dataset.id));
   document.querySelectorAll('[data-action="open-fac-note"]').forEach(b=>b.onclick=()=>openFacNote(b.dataset.id));
+  
+  // Context Hero actions
+  document.querySelectorAll('[data-action="context-note"]').forEach(b=>b.onclick=()=>{
+    currentTab='faculdade'; render(); openFacNote(null);
+    document.getElementById('facTitle').value=`Apontamentos: ${b.dataset.title}`;
+    document.getElementById('facCategory').value='apontamentos';
+  });
+  document.querySelectorAll('[data-action="timer-custom"]').forEach(b=>b.onclick=()=>openTimer(null, b.dataset.title));
 
   // task form
   const tf=document.getElementById('taskForm');
@@ -1277,11 +1327,11 @@ function updateFacToolbarState(){
 /* ════════════════════════════════════════
    POMODORO
 ════════════════════════════════════════ */
-function openTimer(taskId){
+function openTimer(taskId, customTitle=null){
   const t=data.tasks.find(t=>t.id===taskId);
-  Object.assign(timerState,{taskId,totalSeconds:25*60,remaining:25*60,running:false});
+  Object.assign(timerState,{taskId,totalSeconds:25*60,remaining:25*60,running:false,customTitle});
   clearInterval(timerState.interval);
-  document.getElementById('timerTaskName').textContent=t?t.title:'';
+  document.getElementById('timerTaskName').textContent=customTitle ? customTitle : (t?t.title:'Foco livre');
   document.getElementById('timerStartPause').textContent='Iniciar';
   document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active',b.dataset.mins==='25'));
   updateRing(); document.getElementById('timerOverlay').classList.add('open');
@@ -1289,7 +1339,23 @@ function openTimer(taskId){
 function closeTimer(){clearInterval(timerState.interval);timerState.running=false;document.getElementById('timerOverlay').classList.remove('open');}
 function updateRing(){const circ=2*Math.PI*85,fg=document.getElementById('ringFg');fg.style.strokeDasharray=circ;fg.style.strokeDashoffset=circ*(1-timerState.remaining/timerState.totalSeconds);const m=Math.floor(timerState.remaining/60).toString().padStart(2,'0'),s=(timerState.remaining%60).toString().padStart(2,'0');document.getElementById('timerDigits').textContent=`${m}:${s}`;}
 function tick(){if(timerState.remaining>0){timerState.remaining--;updateRing();}else finishSession(true);}
-function finishSession(auto){clearInterval(timerState.interval);timerState.running=false;const minutes=Math.round((timerState.totalSeconds-timerState.remaining)/60);const t=data.tasks.find(t=>t.id===timerState.taskId);if(t&&minutes>0){t.actual=(t.actual||0)+minutes;data.sessions.push({id:uid(),taskId:t.id,category:t.category,minutes,date:todayISO()});saveData();}document.getElementById('timerStartPause').textContent='Iniciar';if(auto){document.getElementById('timerDigits').textContent='✦';showToast(`Sessão concluída! +${minutes}min ✦`);}render();}
+function finishSession(auto){
+  clearInterval(timerState.interval);timerState.running=false;
+  const minutes=Math.round((timerState.totalSeconds-timerState.remaining)/60);
+  const t=data.tasks.find(t=>t.id===timerState.taskId);
+  if(t&&minutes>0){
+    t.actual=(t.actual||0)+minutes;
+    data.sessions.push({id:uid(),taskId:t.id,category:t.category,minutes,date:todayISO()});
+    saveData();
+  } else if(!t && minutes>0){
+    // Grava como tempo de faculdade por defeito quando vem do Hero Context
+    data.sessions.push({id:uid(),taskId:null,category:'faculdade',minutes,date:todayISO()});
+    saveData();
+  }
+  document.getElementById('timerStartPause').textContent='Iniciar';
+  if(auto){document.getElementById('timerDigits').textContent='✦';showToast(`Sessão concluída! +${minutes}min ✦`);}
+  render();
+}
 document.getElementById('timerStartPause').onclick=()=>{if(timerState.running){clearInterval(timerState.interval);timerState.running=false;document.getElementById('timerStartPause').textContent='Continuar';}else{timerState.running=true;timerState.interval=setInterval(tick,1000);document.getElementById('timerStartPause').textContent='Pausar';}};
 document.getElementById('timerReset').onclick=()=>{clearInterval(timerState.interval);timerState.running=false;timerState.remaining=timerState.totalSeconds;document.getElementById('timerStartPause').textContent='Iniciar';updateRing();};
 document.getElementById('timerFinish').onclick=()=>finishSession(false);
