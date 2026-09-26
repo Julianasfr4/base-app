@@ -71,6 +71,12 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
 .ch-actions{display:flex;gap:12px;flex-wrap:wrap;}
 .btn-hero{all:unset;padding:12px 24px;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;background:var(--accent);color:#fff;box-shadow:0 8px 24px var(--accent-glow);display:flex;align-items:center;gap:8px;}
 .btn-hero:hover{transform:translateY(-2px);box-shadow:0 12px 32px var(--accent-glow);}
+.context-hero.empty-hero{background:var(--surface);background-image:radial-gradient(circle at 100% 0%, rgba(255,255,255,0.02) 0%, transparent 60%);border-color:var(--border);box-shadow:none;}
+.context-hero.empty-hero::before{background:var(--border2);}
+
+/* ── DASHBOARD GRID ── */
+.dashboard-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:start;}
+@media(max-width:850px){.dashboard-grid{grid-template-columns:1fr;}}
 
 /* ── MAIN ── */
 .main{padding:40px 48px;max-width:960px;width:100%;}
@@ -849,6 +855,7 @@ function renderTodayPage(){
 
   const targetEv = activeEv || nextEv;
   let heroHTML = '';
+
   if(targetEv){
     const badge = ctxType === 'active' 
       ? `<div class="ch-badge"><div class="ch-badge-dot"></div> A decorrer agora</div>` 
@@ -861,6 +868,12 @@ function renderTodayPage(){
         <button class="btn btn-ghost" style="background:var(--surface);border:1px solid var(--border)" data-action="timer-custom" data-title="${escapeHTML(targetEv.title)}">⏱️ Iniciar Foco</button>
       </div>
     </div>`;
+  } else {
+    heroHTML = `<div class="context-hero empty-hero">
+      <div class="ch-badge" style="color:var(--ink-sub)">${todayEvs.length ? 'Neste momento' : 'O teu dia'}</div>
+      <h2 class="ch-title" style="color:var(--ink-ghost);font-size:28px;margin-bottom:8px;">${todayEvs.length ? 'Nenhum evento a decorrer.' : 'Não tens eventos agendados hoje.'}</h2>
+      ${!gcal.connected ? `<p style="font-size:13px;color:var(--ink-sub);margin:0;">Dica: Liga o teu Google Calendar na aba <b>Agenda</b>.</p>` : ''}
+    </div>`;
   }
 
   const strip=`<div class="today-strip">
@@ -868,10 +881,27 @@ function renderTodayPage(){
     <div class="strip-card"><div class="sc-label">Concluídas</div><div class="sc-value">${done}</div><div class="sc-sub">de ${data.tasks.length} total</div></div>
     <div class="strip-card"><div class="sc-label">Tempo hoje</div><div class="sc-value">${todayMins}m</div><div class="sc-sub">${todaySessions.length} sessão(ões)</div></div>
   </div>`;
-  const evSection=todayEvs.length?`<div class="card" style="margin-bottom:24px"><div class="card-title">📅 O teu dia</div><div class="ev-list">${todayEvs.map(evRowHTML).join('')}</div></div>`:'';
+  
+  const evSection=todayEvs.length?`<div class="card" style="margin-bottom:0;"><div class="card-title">📅 Horário</div><div class="ev-list">${todayEvs.map(evRowHTML).join('')}</div></div>`:'';
   const rows=list.length?list.map(taskRowHTML).join(''):`<div class="empty"><span class="empty-icon">✦</span>Nenhuma tarefa pendente!</div>`;
   
-  return `<div class="page-header"><div class="page-eyebrow">${now.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'})}</div><h1 class="page-title"><em>${greet()}</em></h1><p class="page-sub">O teu painel de controlo.</p></div>${heroHTML}${strip}${evSection}<div class="card"><div class="card-title">Tarefas pendentes</div><div class="task-list">${rows}</div></div>`;
+  return `
+    <div class="page-header">
+      <div class="page-eyebrow">${now.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'})}</div>
+      <h1 class="page-title" style="font-size:42px;"><em>${greet()}</em></h1>
+      <p class="page-sub">O teu painel de controlo.</p>
+    </div>
+    ${strip}
+    <div class="dashboard-grid">
+      <div class="dash-col-left">
+        ${heroHTML}
+        ${evSection}
+      </div>
+      <div class="dash-col-right">
+        <div class="card" style="margin-bottom:0;"><div class="card-title">Tarefas pendentes</div><div class="task-list">${rows}</div></div>
+      </div>
+    </div>
+  `;
 }
 
 /* ════════════════════════════════════════
