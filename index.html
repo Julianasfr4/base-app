@@ -871,8 +871,7 @@ function renderTodayPage(){
   } else {
     heroHTML = `<div class="context-hero empty-hero">
       <div class="ch-badge" style="color:var(--ink-sub)">${todayEvs.length ? 'Neste momento' : 'O teu dia'}</div>
-      <h2 class="ch-title" style="color:var(--ink-ghost);font-size:28px;margin-bottom:8px;">${todayEvs.length ? 'Nenhum evento a decorrer.' : 'Não tens eventos agendados hoje.'}</h2>
-      ${!gcal.connected ? `<p style="font-size:13px;color:var(--ink-sub);margin:0;">Dica: Liga o teu Google Calendar na aba <b>Agenda</b>.</p>` : ''}
+      <h2 class="ch-title" style="color:var(--ink-ghost);font-size:28px;margin-bottom:0;">${todayEvs.length ? 'Nenhum evento a decorrer.' : 'Não tens eventos agendados hoje.'}</h2>
     </div>`;
   }
 
