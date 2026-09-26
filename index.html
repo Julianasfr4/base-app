@@ -405,6 +405,8 @@ let gcal = {
   loading:   false,
   tokenClient: null
 };
+let gcalRefreshTimer = null;
+const GCAL_REFRESH_MS = 55 * 60 * 1000; // renovar token a cada 55 min (antes de expirar ao fim de 1h)
 
 /* ════════════════════════════════════════════
    UTILS
@@ -452,16 +454,52 @@ function gisLoaded(){
     callback:  handleGCalToken
   });
   gcal.gisReady = true;
+  // Se a sessão anterior estava ligada, reconecta em silêncio
+  if(localStorage.getItem('gcal_connected')){
+    tryAutoConnect();
+  }
+}
+
+// Tenta reconectar sem mostrar popup (funciona se o browser ainda tem sessão Google ativa)
+async function tryAutoConnect(){
+  // Aguarda a API gapi carregar (máx. 8 segundos)
+  for(let i=0; i<80; i++){
+    if(gcal.gapiReady) break;
+    await new Promise(r=>setTimeout(r,100));
+  }
+  if(!gcal.gapiReady){ localStorage.removeItem('gcal_connected'); return; }
+  gcal.loading = true;
+  render();
+  gcal.tokenClient.requestAccessToken({prompt:''}); // silencioso — sem popup
+}
+
+// Inicia renovação automática do token a cada 55 minutos
+function startAutoRefresh(){
+  clearInterval(gcalRefreshTimer);
+  gcalRefreshTimer = setInterval(()=>{
+    if(gcal.connected && gcal.gisReady){
+      // Renovação silenciosa — o utilizador não vê nada
+      gcal.tokenClient.requestAccessToken({prompt:''});
+    }
+  }, GCAL_REFRESH_MS);
 }
 
 async function handleGCalToken(resp){
   if(resp.error){
+    // Se for cancelamento silencioso, apenas limpa o loading
+    if(resp.error === 'interaction_required' || resp.error === 'access_denied'){
+      gcal.loading = false;
+      render();
+      return;
+    }
     showToast('Erro ao ligar: '+resp.error);
     gcal.loading = false;
     render();
     return;
   }
   gcal.connected = true;
+  localStorage.setItem('gcal_connected','1'); // lembra que está ligado para próximas visitas
+  startAutoRefresh(); // renova token automaticamente a cada 55 min
   gcal.loading   = true;
   render();
   await syncFromGCal();
@@ -481,6 +519,8 @@ function connectGCal(){
 }
 
 function disconnectGCal(){
+  clearInterval(gcalRefreshTimer); // para a renovação automática
+  localStorage.removeItem('gcal_connected'); // esquece a sessão
   const token = gapi.client.getToken();
   if(token) google.accounts.oauth2.revoke(token.access_token, ()=>{});
   gapi.client.setToken('');
