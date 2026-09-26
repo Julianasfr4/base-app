@@ -98,7 +98,22 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
 .grade-row { display:flex; justify-content:space-between; font-size:13px; padding:6px 0; border-bottom:1px dashed var(--border); color: var(--ink-sub); }
 .grade-row:last-child { border-bottom:none; }
 
+
+/* ── SAMSUNG NOTES FEATURES ── */
+.paper-ruled { background-image: repeating-linear-gradient(transparent, transparent 31px, var(--border2) 31px, var(--border2) 32px) !important; background-attachment: local !important; }
+.paper-grid { background-image: linear-gradient(var(--border2) 1px, transparent 1px), linear-gradient(90deg, var(--border2) 1px, transparent 1px) !important; background-size: 24px 24px !important; }
+.paper-dotted { background-image: radial-gradient(var(--ink-sub) 1.5px, transparent 1.5px) !important; background-size: 24px 24px !important; }
+
+.draw-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--surface); z-index:600; display:none; flex-direction:column; }
+.draw-overlay.open { display:flex; }
+.draw-tools { height:60px; border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 24px; gap:16px; background:var(--surface2); }
+.draw-canvas-container { flex:1; position:relative; overflow:hidden; background:#fff; cursor:crosshair; }
+#drawCanvas { position:absolute; top:0; left:0; touch-action: none; }
+
+.fac-editor img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); margin: 8px 0; }
+.fac-editor audio { outline: none; border-radius: 24px; margin: 8px 0; max-width:100%; }
 /* ── MAIN ── */
+
 
 .main{padding:40px 48px;max-width:960px;width:100%;}
 .page-header{margin-bottom:32px;}
@@ -605,7 +620,7 @@ let facCatFilter = 'all';
 let facSearchQ   = '';
 let timerState  = {taskId:null,totalSeconds:25*60,remaining:25*60,running:false,interval:null,customTitle:null};
 let noteState   = {id:null,color:'nc-default',pinned:false};
-let facNoteState= {id:null,color:'nc-default',pinned:false};
+let facNoteState= {id:null,color:'nc-default',pinned:false,bg:'none'};
 
 // Google state
 let gcal = {gapiReady:false, gisReady:false, connected:false, loading:false, tokenClient:null};
@@ -1497,6 +1512,128 @@ function updateFacToolbarState(){
     catch(e){}
   });
 }
+
+
+/* ── SAMSUNG NOTES FEATURES JS ── */
+let bgIndex = 0;
+const bgTypes = ['none', 'paper-ruled', 'paper-grid', 'paper-dotted'];
+
+document.getElementById('facBgToggle').onclick = (e) => {
+  e.preventDefault();
+  bgIndex = (bgIndex + 1) % bgTypes.length;
+  facNoteState.bg = bgTypes[bgIndex];
+  const ed = document.getElementById('facEditor');
+  ed.className = 'fac-editor'; // reset
+  if(facNoteState.bg !== 'none') ed.classList.add(facNoteState.bg);
+};
+
+// Audio Recording
+let mediaRec, audioChunks=[];
+document.getElementById('facMicBtn').onclick = async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('facMicBtn');
+  if(mediaRec && mediaRec.state === 'recording'){
+     mediaRec.stop();
+     btn.style.color = ''; btn.textContent = '🎙️ Gravar';
+  } else {
+     try {
+       const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+       mediaRec = new MediaRecorder(stream);
+       mediaRec.start();
+       btn.style.color = 'var(--danger)'; btn.textContent = '⏹️ Parar (A Gravar...)';
+       audioChunks = [];
+       mediaRec.ondataavailable = ev => audioChunks.push(ev.data);
+       mediaRec.onstop = () => {
+          const audioBlob = new Blob(audioChunks, {type:'audio/webm'});
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = () => {
+             document.getElementById('facEditor').focus();
+             const audioHTML = `<br><audio controls src="${reader.result}"></audio><br>`;
+             document.execCommand('insertHTML', false, audioHTML);
+          };
+          stream.getTracks().forEach(t=>t.stop());
+       };
+     } catch(err) {
+       alert("Erro ao aceder ao microfone. Aceita as permissões do browser.");
+     }
+  }
+};
+
+// Drawing Mode
+let isDraw=false, dCtx=null, dCanvas=null, isEraser=false;
+document.getElementById('facDrawBtn').onclick = (e) => {
+  e.preventDefault();
+  document.getElementById('drawOverlay').classList.add('open');
+  dCanvas = document.getElementById('drawCanvas');
+  const cont = document.getElementById('drawContainer');
+  dCanvas.width = cont.clientWidth; dCanvas.height = cont.clientHeight;
+  dCtx = dCanvas.getContext('2d');
+  dCtx.lineCap = 'round'; dCtx.lineJoin = 'round';
+  updateDrawStyle();
+};
+function updateDrawStyle(){
+  if(isEraser){ dCtx.globalCompositeOperation='destination-out'; dCtx.lineWidth=30; }
+  else{ dCtx.globalCompositeOperation='source-over'; dCtx.strokeStyle=document.getElementById('drawColor').value; dCtx.lineWidth=document.getElementById('drawSize').value; }
+}
+document.getElementById('drawColor').onchange = () => { isEraser=false; updateDrawStyle(); };
+document.getElementById('drawSize').onchange = () => { updateDrawStyle(); };
+document.getElementById('drawEraser').onclick = () => { isEraser=true; updateDrawStyle(); };
+
+function closeDrawMode(save){
+  document.getElementById('drawOverlay').classList.remove('open');
+  if(save && dCanvas){
+     const dataUrl = dCanvas.toDataURL('image/png');
+     document.getElementById('facEditor').focus();
+     document.execCommand('insertImage', false, dataUrl);
+  }
+}
+
+// Draw events
+const getX = (e) => e.offsetX || (e.touches ? e.touches[0].clientX : 0);
+const getY = (e) => e.offsetY || (e.touches ? e.touches[0].clientY - 60 : 0);
+
+const startDraw = (e) => { isDraw=true; dCtx.beginPath(); dCtx.moveTo(getX(e), getY(e)); };
+const draw = (e) => { if(!isDraw) return; e.preventDefault(); dCtx.lineTo(getX(e), getY(e)); dCtx.stroke(); };
+const endDraw = () => { isDraw=false; };
+
+document.addEventListener('DOMContentLoaded', () => {
+    const cvs = document.getElementById('drawCanvas');
+    if(cvs) {
+        cvs.addEventListener('mousedown', startDraw);
+        cvs.addEventListener('mousemove', draw);
+        cvs.addEventListener('mouseup', endDraw);
+        cvs.addEventListener('touchstart', startDraw, {passive:false});
+        cvs.addEventListener('touchmove', draw, {passive:false});
+        cvs.addEventListener('touchend', endDraw);
+    }
+});
+
+// Patch open and save for Backgrounds
+const origOpenFacNote = openFacNote;
+openFacNote = function(id) {
+   origOpenFacNote(id);
+   const ed = document.getElementById('facEditor');
+   ed.className = 'fac-editor'; // reset class
+   if(id) {
+     const n = data.facNotes.find(x=>x.id===id);
+     if(n && n.bg && n.bg !== 'none') {
+        facNoteState.bg = n.bg;
+        bgIndex = bgTypes.indexOf(n.bg);
+        ed.classList.add(n.bg);
+     } else { facNoteState.bg = 'none'; bgIndex = 0; }
+   }
+};
+
+const origSaveFacNote = saveFacNote;
+saveFacNote = function() {
+   origSaveFacNote();
+   if(facNoteState.id) {
+     const n = data.facNotes.find(x=>x.id===facNoteState.id);
+     if(n) n.bg = facNoteState.bg;
+   }
+   saveData();
+};
 
 /* ════════════════════════════════════════
    POMODORO
