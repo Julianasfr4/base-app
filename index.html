@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0f13">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <title>Base — O meu espaço</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -78,7 +81,25 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
 .dashboard-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:start;}
 @media(max-width:850px){.dashboard-grid{grid-template-columns:1fr;}}
 
+
+/* ── WEATHER & HABITS & GRADES ── */
+.weather-widget { display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-sub); background:var(--surface2); padding:6px 14px; border-radius:99px; margin-bottom: 24px; border:1px solid var(--border); }
+.habit-row { display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border); }
+.habit-row:last-child { border-bottom:none; }
+.habit-info { display:flex; align-items:center; gap:12px; font-weight: 500; cursor:pointer;}
+.habit-streak { font-size:12px; color:var(--accent); font-weight:700; display:flex; align-items:center; gap:4px; background:var(--accent-light); padding:2px 8px; border-radius:99px; }
+.habit-checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--border2); display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.habit-checkbox.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chart-container { width:100%; max-height:250px; margin-bottom:24px; display:flex; justify-content:center; }
+.grade-card { background:var(--surface2); padding:16px; border-radius:var(--r); margin-bottom:12px; border:1px solid var(--border); }
+.grade-header { display:flex; justify-content:space-between; margin-bottom: 12px; align-items:center; }
+.grade-header h3 { font-size: 16px; font-family: var(--font-serif); }
+.grade-avg { font-size: 18px; font-weight: 700; color: var(--accent); }
+.grade-row { display:flex; justify-content:space-between; font-size:13px; padding:6px 0; border-bottom:1px dashed var(--border); color: var(--ink-sub); }
+.grade-row:last-child { border-bottom:none; }
+
 /* ── MAIN ── */
+
 .main{padding:40px 48px;max-width:960px;width:100%;}
 .page-header{margin-bottom:32px;}
 .page-eyebrow{font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
@@ -883,10 +904,9 @@ function renderTodayPage(){
   
   const evSection=todayEvs.length?`<div class="card" style="margin-bottom:0;"><div class="card-title">📅 Horário</div><div class="ev-list">${todayEvs.map(evRowHTML).join('')}</div></div>`:'';
   const rows=list.length?list.map(taskRowHTML).join(''):`<div class="empty"><span class="empty-icon">✦</span>Nenhuma tarefa pendente!</div>`;
-  
   return `
     <div class="page-header">
-      <div class="page-eyebrow">${now.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'})}</div>
+      ${weatherData ? `<div class="weather-widget">🌤️ ${weatherData.temperature}ºC — O teu dia, otimizado.</div>` : ''}<div class="page-eyebrow">${now.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'})}</div>
       <h1 class="page-title" style="font-size:42px;"><em>${greet()}</em></h1>
       <p class="page-sub">O teu painel de controlo.</p>
     </div>
@@ -897,6 +917,23 @@ function renderTodayPage(){
         ${evSection}
       </div>
       <div class="dash-col-right">
+
+    <div class="card" style="margin-bottom:24px;">
+      <div class="card-title">🌱 Hábitos Diários</div>
+      <div class="habit-list">
+        ${data.habits.map(h => {
+           const isDone = h.history.includes(today);
+           return `<div class="habit-row" onclick="toggleHabit('${h.id}')" style="cursor:pointer;">
+             <div class="habit-info">
+               <div class="habit-checkbox ${isDone ? 'done' : ''}">${isDone ? '✓' : ''}</div>
+               ${h.name}
+             </div>
+             ${h.streak > 0 ? `<div class="habit-streak">🔥 ${h.streak}</div>` : ''}
+           </div>`;
+        }).join('')}
+      </div>
+    </div>
+    
         <div class="card" style="margin-bottom:0;"><div class="card-title">Tarefas pendentes</div><div class="task-list">${rows}</div></div>
       </div>
     </div>
@@ -930,7 +967,7 @@ function renderFaculdadePage(){
   const noteCards=notes.map(n=>{
     const facCat=FAC_CATS.find(c=>c.id===n.category)||FAC_CATS[1];
     const preview=stripHTML(n.content||'');
-    return `<div class="fac-note-card ${n.color||'nc-default'} ${n.pinned?'pinned':''}" data-action="open-fac-note" data-id="${n.id}">
+  return `<div class="fac-note-card ${n.color||'nc-default'} ${n.pinned?'pinned':''}" data-action="open-fac-note" data-id="${n.id}">
       <div class="fac-note-card-cat">${facCat.emoji} ${facCat.label}</div>
       ${n.title?`<div class="fac-note-card-title">${escapeHTML(n.title)}</div>`:''}
       <div class="fac-note-card-body">${escapeHTML(preview)}</div>
@@ -966,6 +1003,29 @@ function renderFaculdadePage(){
     <div class="fac-divider-label">📝 Notas de Faculdade</div>
     <div class="fac-divider-line"></div>
   </div>
+
+    <div class="card" style="margin-top:24px;">
+      <div class="card-title" style="display:flex; justify-content:space-between; width:100%;">
+        <span>🎓 Calculadora de Médias</span>
+        <button class="icon-btn" onclick="addSubject()">+ Cadeira</button>
+      </div>
+      <div class="dashboard-grid" style="grid-template-columns:1fr 1fr;">
+        ${(data.subjects||[]).length===0 ? '<div class="empty full-span">Nenhuma cadeira adicionada. Clica no + para começar a calcular médias.</div>' : ''}
+        ${(data.subjects||[]).map(s => {
+           const totalWeight = s.grades.reduce((acc,g)=>acc+g.weight,0);
+           const currentAvg = totalWeight > 0 ? (s.grades.reduce((acc,g)=>acc+(g.value*(g.weight/100)),0) / (totalWeight/100)).toFixed(1) : '-';
+           return `<div class="grade-card">
+             <div class="grade-header">
+               <h3>${escapeHTML(s.name)}</h3>
+               <div class="grade-avg">${currentAvg}</div>
+             </div>
+             ${s.grades.map((g, idx) => `<div class="grade-row"><span>${escapeHTML(g.name)} (${g.weight}%)</span><span>${g.value.toFixed(1)} <span style="cursor:pointer;color:var(--danger);margin-left:8px;" onclick="delGrade('${s.id}',${idx})">✕</span></span></div>`).join('')}
+             <div style="margin-top:12px;"><button class="btn btn-ghost" style="width:100%;font-size:12px;padding:6px;" onclick="addGrade('${s.id}')">+ Adicionar Nota</button></div>
+           </div>`;
+        }).join('')}
+      </div>
+    </div>
+    
 
   ${driveBar}
 
@@ -1106,11 +1166,55 @@ function renderMoneyPage(){
   const byCat={};CATEGORIES.forEach(c=>byCat[c.id]=0);monthExp.forEach(e=>{if(byCat.hasOwnProperty(e.category))byCat[e.category]+=e.amount;});
   const maxv=Math.max(1,...Object.values(byCat));
   const rows=data.expenses.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
-  return `<div class="page-header"><div class="page-eyebrow">Gestão financeira</div><h1 class="page-title">Dinheiro</h1><p class="page-sub">Registo de gastos mensais.</p></div>
-  <div class="money-grid"><div class="money-card"><div class="label">Gasto este mês</div><div class="value negative">€${total.toFixed(2)}</div></div><div class="money-card"><div class="label">Meta mensal</div><div class="value"><span style="font-size:16px;color:var(--ink-ghost)">€</span><input class="goal-input" type="number" id="goalInput" value="${goal||''}" placeholder="0"></div>${goal>0?`<div class="goal-bar"><div class="goal-fill ${over?'over':''}" style="width:${pct}%"></div></div>`:''}</div><div class="money-card"><div class="label">Disponível</div><div class="value ${over?'negative':'positive'}">€${goal>0?(over?`-${(total-goal).toFixed(2)}`:left.toFixed(2)):'—'}</div></div></div>
-  <div class="card"><div class="card-title">Por categoria</div>${CATEGORIES.map(c=>{const v=byCat[c.id],p=Math.round((v/maxv)*100);return`<div class="bar-row" style="margin-bottom:10px"><div class="bar-label">${c.emoji} ${c.label}</div><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${c.color}"></div></div><div class="bar-val">€${v.toFixed(0)}</div></div>`;}).join('')}</div>
-  <div class="card"><div class="card-title">Novo gasto</div><form id="expenseForm" class="form-grid"><div class="field full-span"><label>Descrição</label><input type="text" id="e-desc" placeholder="Ex: Supermercado" required></div><div class="field"><label>Valor (€)</label><input type="number" id="e-amount" min="0" step="0.01" placeholder="0.00" required></div><div class="field"><label>Categoria</label><select id="e-category">${CATEGORIES.map(c=>`<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('')}</select></div><div class="field"><label>Data</label><input type="date" id="e-date" value="${todayISO()}"></div><div class="form-actions"><button type="submit" class="btn btn-primary">Adicionar gasto</button></div></form></div>
-  <div class="card"><div class="card-title">Últimos gastos</div>${rows.length?`<div class="expense-list">${rows.map(e=>`<div class="expense-row"><div class="expense-date">${formatDate(e.date)}</div><div class="expense-desc">${escapeHTML(e.desc)}<span class="tag cat-${e.category}">${catInfo(e.category).emoji} ${catInfo(e.category).label}</span></div><div class="expense-amount">-€${e.amount.toFixed(2)}</div><button class="icon-btn danger" data-action="delete-expense" data-id="${e.id}">✕</button></div>`).join('')}</div>`:`<div class="empty" style="border:none;padding:20px 0"><span class="empty-icon">💸</span>Ainda sem gastos.</div>`}</div>`;
+  return `
+    <div class="page-header"><div class="page-eyebrow">Gestão financeira</div><h1 class="page-title">Dinheiro</h1><p class="page-sub">Registo de rendimentos e gastos.</p></div>
+    
+    <div class="money-grid" style="grid-template-columns:1fr 1fr 1fr; margin-bottom:32px;">
+      <div class="money-card"><div class="label">Rendimentos</div><div class="value positive">€${totalIncome.toFixed(2)}</div></div>
+      <div class="money-card"><div class="label">Gastos</div><div class="value negative">€${total.toFixed(2)}</div></div>
+      <div class="money-card"><div class="label">Balanço Atual</div><div class="value ${balance<0?'negative':'positive'}">€${balance.toFixed(2)}</div></div>
+    </div>
+    
+    <div class="dashboard-grid">
+      <div class="dash-col-left">
+        <div class="card">
+          <div class="card-title">📊 Análise de Gastos</div>
+          ${total>0 ? `<div class="chart-container"><canvas id="moneyChart"></canvas></div>` : `<div class="empty">Sem gastos para analisar.</div>`}
+          ${CATEGORIES.map(c=>{const v=byCat[c.id],p=Math.round((v/maxv)*100);return`<div class="bar-row" style="margin-bottom:10px"><div class="bar-label">${c.emoji} ${c.label}</div><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${c.color}"></div></div><div class="bar-val">€${v.toFixed(0)}</div></div>`;}).join('')}
+        </div>
+      </div>
+      
+      <div class="dash-col-right">
+        <div class="card"><div class="card-title">Novo Movimento</div>
+          <div style="display:flex;gap:12px;margin-bottom:12px;">
+            <button class="btn btn-primary" style="flex:1;" onclick="document.getElementById('expenseForm').style.display='block';document.getElementById('incomeForm').style.display='none';">Novo Gasto</button>
+            <button class="btn btn-ghost" style="flex:1;background:var(--surface2);" onclick="document.getElementById('incomeForm').style.display='block';document.getElementById('expenseForm').style.display='none';">Novo Rendimento</button>
+          </div>
+          
+          <form id="expenseForm" class="form-grid">
+            <div class="field full-span"><label>Descrição do Gasto</label><input type="text" id="e-desc" required></div>
+            <div class="field"><label>Valor (€)</label><input type="number" id="e-amount" min="0" step="0.01" required></div>
+            <div class="field"><label>Categoria</label><select id="e-category">${CATEGORIES.map(c=>`<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('')}</select></div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Adicionar Gasto</button></div>
+          </form>
+
+          <form id="incomeForm" class="form-grid" style="display:none;">
+            <div class="field full-span"><label>Origem do Rendimento</label><input type="text" id="i-desc" placeholder="Ex: Mesada, Salário" required></div>
+            <div class="field"><label>Valor (€)</label><input type="number" id="i-amount" min="0" step="0.01" required></div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary" style="background:var(--success);">Adicionar Rendimento</button></div>
+          </form>
+        </div>
+        
+        <div class="card"><div class="card-title">Últimos Movimentos</div>
+          <div class="expense-list">
+            ${(data.incomes||[]).map(i=>`<div class="expense-row"><div class="expense-date">${formatDate(i.date)}</div><div class="expense-desc">${escapeHTML(i.desc)}<span class="tag cat-casa" style="color:var(--success)">+ Rendimento</span></div><div class="expense-amount" style="color:var(--success)">+€${i.amount.toFixed(2)}</div></div>`).join('')}
+            ${rows.map(e=>`<div class="expense-row"><div class="expense-date">${formatDate(e.date)}</div><div class="expense-desc">${escapeHTML(e.desc)}<span class="tag cat-${e.category}">${catInfo(e.category).emoji} ${catInfo(e.category).label}</span></div><div class="expense-amount">-€${e.amount.toFixed(2)}</div><button class="icon-btn danger" data-action="delete-expense" data-id="${e.id}">✕</button></div>`).join('')}
+            ${(rows.length===0 && (!data.incomes||data.incomes.length===0)) ? `<div class="empty">Ainda sem movimentos.</div>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+    `;
 }
 
 /* ════════════════════════════════════════
@@ -1145,6 +1249,47 @@ function attachHandlers(){
 
   const gi=document.getElementById('goalInput');
   if(gi) gi.onchange=()=>{data.goal=parseFloat(gi.value)||0;saveData();render();};
+
+
+  // Render Chart if on money page
+  if(currentTab==='dinheiro' && document.getElementById('moneyChart')){
+    const ctx = document.getElementById('moneyChart').getContext('2d');
+    if(chartInstance) chartInstance.destroy();
+    
+    const catLabels = CATEGORIES.map(c=>c.emoji + ' ' + c.label);
+    const catData = CATEGORIES.map(c=> {
+      return data.expenses.filter(e=>e.category===c.id).reduce((s,e)=>s+e.amount,0);
+    });
+    const catColors = CATEGORIES.map(c=>c.color);
+    
+    chartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: catLabels,
+        datasets: [{ data: catData, backgroundColor: catColors, borderWidth: 0 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { color: '#eeedf0', font: { family: "'Plus Jakarta Sans', sans-serif" } } }
+        }
+      }
+    });
+  }
+
+  // Income form
+  const incForm = document.getElementById('incomeForm');
+  if(incForm) incForm.onsubmit=e=>{
+    e.preventDefault();
+    if(!data.incomes) data.incomes = [];
+    data.incomes.push({
+      id: uid(),
+      desc: document.getElementById('i-desc').value.trim(),
+      amount: parseFloat(document.getElementById('i-amount').value)||0,
+      date: todayISO()
+    });
+    saveData(); render();
+  };
 
   // calendar
   const calPrev=document.getElementById('calPrev');if(calPrev) calPrev.onclick=()=>{calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1);render();};
@@ -1397,10 +1542,64 @@ document.getElementById('timerOverlay').onclick=e=>{if(e.target===e.currentTarge
 ════════════════════════════════════════ */
 function showToast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText=`position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border2);color:var(--ink);padding:10px 22px;border-radius:99px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.4);`;document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';clearTimeout(t._timer);t._timer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(10px)';},3000);}
 
+
+function toggleHabit(id){
+  const h=data.habits.find(x=>x.id===id);
+  if(!h)return;
+  const today=todayISO();
+  const idx=h.history.indexOf(today);
+  if(idx===-1){
+    h.history.push(today);
+    // calc streak simple
+    h.streak++;
+  } else {
+    h.history.splice(idx,1);
+    h.streak = Math.max(0, h.streak-1);
+  }
+  saveData(); render();
+}
+function addSubject(){
+  const n = prompt('Nome da Cadeira:');
+  if(!n) return;
+  if(!data.subjects) data.subjects=[];
+  data.subjects.push({id:uid(), name:n, grades:[]});
+  saveData(); render();
+}
+function addGrade(subId){
+  const sub = data.subjects.find(s=>s.id===subId);
+  if(!sub) return;
+  const n = prompt('Nome da avaliação (ex: Teste 1):');
+  if(!n) return;
+  const v = parseFloat(prompt('Nota (ex: 15.5):'));
+  if(isNaN(v)) return;
+  const w = parseFloat(prompt('Peso em % (ex: 40):'));
+  if(isNaN(w)) return;
+  sub.grades.push({name:n, value:v, weight:w});
+  saveData(); render();
+}
+function delGrade(subId, idx){
+  const sub = data.subjects.find(s=>s.id===subId);
+  if(!sub) return;
+  sub.grades.splice(idx,1);
+  saveData(); render();
+}
+/* ════════════════════════════════════════ */
 /* ════════════════════════════════════════
    INIT
 ════════════════════════════════════════ */
+
+async function fetchWeather(){
+  try{
+    const res=await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.7167&longitude=-9.1333&current_weather=true');
+    const d=await res.json();
+    weatherData=d.current_weather;
+    if(currentTab==='hoje') render();
+  }catch(e){}
+}
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e=>console.error(e));
+fetchWeather();
 loadData();
+
 </script>
 </body>
 </html>

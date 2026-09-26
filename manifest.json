@@ -1,0 +1,20 @@
+{
+  "name": "Base | Personal OS",
+  "short_name": "Base",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f0f13",
+  "theme_color": "#0f0f13",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237c6af7'/><text x='50' y='65' font-size='50' fill='white' text-anchor='middle' font-family='sans-serif' font-weight='bold'>B</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237c6af7'/><text x='50' y='65' font-size='50' fill='white' text-anchor='middle' font-family='sans-serif' font-weight='bold'>B</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
