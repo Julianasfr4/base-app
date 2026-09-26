@@ -748,23 +748,19 @@ function renderAgendaPage(){
   const selLabel = selectedDay ? new Date(selectedDay+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'}) : 'Seleciona um dia';
   const evRows = selEvs.length ? selEvs.map(evRowHTML).join('') : `<div class="empty" style="border:none;padding:14px 0;font-size:13px">Sem eventos neste dia.</div>`;
 
-  // gcal status bar
-  const gcalBar = `<div class="gcal-bar ${gcal.connected?'connected':''}">
-    <div class="gcal-bar-left">
-      <div class="gcal-dot"></div>
-      <span style="color:${gcal.connected?'var(--success)':'var(--ink-sub)'}">
-        ${gcal.connected ? '✓ Google Calendar sincronizado' : 'Google Calendar não ligado'}
-      </span>
-      ${gcal.loading ? '<span class="gcal-loading">A sincronizar…</span>' : ''}
-      ${gcal.connected && !gcal.loading ? '<span class="gcal-badge">AO VIVO</span>' : ''}
-    </div>
-    <div class="gcal-bar-right">
-      ${gcal.connected
-        ? `<button class="gcal-action-btn" id="gcalSyncBtn">↻ Sincronizar</button>
-           <button class="gcal-action-btn danger" id="gcalDisconnectBtn">Desligar</button>`
-        : `<button class="gcal-action-btn primary" id="gcalConnectBtn">📅 Ligar Google Calendar</button>`}
-    </div>
-  </div>`;
+  // gcal bar — só aparece quando NÃO está ligado ou durante carregamento
+  const gcalBar = gcal.loading
+    ? `<div class="gcal-bar"><div class="gcal-bar-left"><div class="gcal-dot"></div><span class="gcal-loading">A ligar ao Google Calendar…</span></div></div>`
+    : gcal.connected
+      ? '' // ligado → nada, fica completamente escondido
+      : `<div class="gcal-bar"><div class="gcal-bar-left"><div class="gcal-dot"></div><span style="color:var(--ink-sub)">Google Calendar não ligado</span></div><div class="gcal-bar-right"><button class="gcal-action-btn primary" id="gcalConnectBtn">📅 Ligar Google Calendar</button></div></div>`;
+
+  // controlos discretos no nav do calendário (só quando ligado)
+  const gcalControls = gcal.connected
+    ? `<span style="font-size:11px;color:var(--success);font-weight:700;letter-spacing:.5px;margin-left:4px">● GCal</span>
+       <button class="cal-nav-btn" id="gcalSyncBtn" title="Sincronizar com Google Calendar">↻</button>
+       <button class="cal-nav-btn" id="gcalDisconnectBtn" style="font-size:11px" title="Desligar Google Calendar">Desligar</button>`
+    : '';
 
   // color options for form
   const colorOpts = EV_COLORS.map((c,i)=>`<option value="${c}">${['Violeta','Verde','Âmbar','Rosa','Azul'][i]}</option>`).join('');
@@ -772,7 +768,7 @@ function renderAgendaPage(){
   return `<div class="page-header">
     <div class="page-eyebrow">Planeamento</div>
     <h1 class="page-title">Agenda</h1>
-    <p class="page-sub">${gcal.connected ? 'Sincronizado com o teu Google Calendar em tempo real.' : 'Calendário pessoal. Liga o Google Calendar para sincronizar.'}</p>
+    <p class="page-sub">O teu calendário${gcal.connected ? ' · sincronizado com Google Calendar' : ''}.</p>
   </div>
   ${gcalBar}
   <div class="cal-nav">
@@ -781,6 +777,7 @@ function renderAgendaPage(){
       <button class="cal-nav-btn" id="calPrev">← Anterior</button>
       <button class="cal-nav-btn" id="calToday">Hoje</button>
       <button class="cal-nav-btn" id="calNext">Próximo →</button>
+      ${gcalControls}
     </div>
   </div>
   <div class="cal-grid">${wdHTML}${cellsHTML}</div>
