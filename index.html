@@ -644,9 +644,18 @@ const stripHTML  = h  => { const d=document.createElement('div');d.innerHTML=h;r
    PERSISTENCE
 ════════════════════════════════════════ */
 async function loadData(){
+  // Ensure default data structure is applied first
+  data = JSON.parse(JSON.stringify(defaultData));
   try{
     const res=await window.storage.get('base-data',false);
-    if(res&&res.value) data=Object.assign(data,JSON.parse(res.value));
+    if(res&&res.value) {
+       const parsed = JSON.parse(res.value);
+       data = Object.assign(data, parsed);
+       // Re-assign default habits if missing
+       if(!parsed.habits || !Array.isArray(parsed.habits)) data.habits = defaultData.habits;
+       if(!parsed.subjects || !Array.isArray(parsed.subjects)) data.subjects = [];
+       if(!parsed.incomes || !Array.isArray(parsed.incomes)) data.incomes = [];
+    }
   }catch(e){ console.log('A começar do zero.'); }
   if(!Array.isArray(data.facNotes)) data.facNotes=[];
   selectedDay=todayISO();
