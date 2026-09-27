@@ -455,6 +455,21 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
   <main class="main"><div id="content"></div></main>
 </div>
 
+<!-- DRAW OVERLAY -->
+<div id="drawOverlay" class="draw-overlay">
+  <div class="draw-tools">
+    <h3 style="font-family:var(--font-serif); flex:1; color:var(--ink); margin:0;">Modo Desenho Livre</h3>
+    <input type="color" id="drawColor" value="#7c6af7" style="border:none;background:none;width:32px;height:32px;cursor:pointer;">
+    <input type="range" id="drawSize" min="1" max="20" value="3" style="width:100px;">
+    <button class="btn btn-ghost" id="drawEraser">Borracha</button>
+    <button class="btn btn-ghost" onclick="closeDrawMode(false)">Cancelar</button>
+    <button class="btn btn-primary" onclick="closeDrawMode(true)">Inserir no Texto</button>
+  </div>
+  <div class="draw-canvas-container" id="drawContainer">
+    <canvas id="drawCanvas"></canvas>
+  </div>
+</div>
+
 <!-- TIMER -->
 <div class="overlay" id="timerOverlay">
   <div class="timer-card">
@@ -544,6 +559,10 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
       <button class="fac-fmt-btn" data-cmd="formatBlock" data-val="blockquote" title="Citação">"</button>
       <button class="fac-fmt-btn" id="facInsertHr" title="Linha divisória">—</button>
       <button class="fac-fmt-btn" id="facHighlight" title="Realçar">🖊</button>
+      <div class="fac-fmt-sep"></div>
+      <button class="fac-fmt-btn" id="facBgToggle" title="Mudar Fundo">📄 Fundo</button>
+      <button class="fac-fmt-btn" id="facDrawBtn" title="Desenhar livremente">🖋️ Desenho</button>
+      <button class="fac-fmt-btn" id="facMicBtn" title="Gravar Áudio">🎙️ Gravar</button>
       <div class="fac-fmt-sep"></div>
       <button class="fac-fmt-btn" data-cmd="removeFormat" title="Limpar formatação">✗f</button>
     </div>
@@ -1527,74 +1546,111 @@ function updateFacToolbarState(){
 let bgIndex = 0;
 const bgTypes = ['none', 'paper-ruled', 'paper-grid', 'paper-dotted'];
 
-document.getElementById('facBgToggle').onclick = (e) => {
-  e.preventDefault();
-  bgIndex = (bgIndex + 1) % bgTypes.length;
-  facNoteState.bg = bgTypes[bgIndex];
-  const ed = document.getElementById('facEditor');
-  ed.className = 'fac-editor'; // reset
-  if(facNoteState.bg !== 'none') ed.classList.add(facNoteState.bg);
-};
+const facBgToggleBtn = document.getElementById('facBgToggle');
+if(facBgToggleBtn){
+  facBgToggleBtn.onclick = (e) => {
+    e.preventDefault();
+    bgIndex = (bgIndex + 1) % bgTypes.length;
+    facNoteState.bg = bgTypes[bgIndex];
+    const ed = document.getElementById('facEditor');
+    if(ed){
+      ed.className = 'fac-editor';
+      if(facNoteState.bg !== 'none') ed.classList.add(facNoteState.bg);
+    }
+  };
+}
 
 // Audio Recording
 let mediaRec, audioChunks=[];
-document.getElementById('facMicBtn').onclick = async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById('facMicBtn');
-  if(mediaRec && mediaRec.state === 'recording'){
-     mediaRec.stop();
-     btn.style.color = ''; btn.textContent = '🎙️ Gravar';
-  } else {
-     try {
-       const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-       mediaRec = new MediaRecorder(stream);
-       mediaRec.start();
-       btn.style.color = 'var(--danger)'; btn.textContent = '⏹️ Parar (A Gravar...)';
-       audioChunks = [];
-       mediaRec.ondataavailable = ev => audioChunks.push(ev.data);
-       mediaRec.onstop = () => {
-          const audioBlob = new Blob(audioChunks, {type:'audio/webm'});
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = () => {
-             document.getElementById('facEditor').focus();
-             const audioHTML = `<br><audio controls src="${reader.result}"></audio><br>`;
-             document.execCommand('insertHTML', false, audioHTML);
-          };
-          stream.getTracks().forEach(t=>t.stop());
-       };
-     } catch(err) {
-       alert("Erro ao aceder ao microfone. Aceita as permissões do browser.");
-     }
-  }
-};
+const facMicBtnEl = document.getElementById('facMicBtn');
+if(facMicBtnEl){
+  facMicBtnEl.onclick = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('facMicBtn');
+    if(mediaRec && mediaRec.state === 'recording'){
+       mediaRec.stop();
+       if(btn){ btn.style.color = ''; btn.textContent = '🎙️ Gravar'; }
+    } else {
+       try {
+         const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+         mediaRec = new MediaRecorder(stream);
+         mediaRec.start();
+         if(btn){ btn.style.color = 'var(--danger)'; btn.textContent = '⏹️ Parar (A Gravar...)'; }
+         audioChunks = [];
+         mediaRec.ondataavailable = ev => audioChunks.push(ev.data);
+         mediaRec.onstop = () => {
+            const audioBlob = new Blob(audioChunks, {type:'audio/webm'});
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = () => {
+               const ed = document.getElementById('facEditor');
+               if(ed){
+                 ed.focus();
+                 const audioHTML = `<br><audio controls src="${reader.result}"></audio><br>`;
+                 document.execCommand('insertHTML', false, audioHTML);
+               }
+            };
+            stream.getTracks().forEach(t=>t.stop());
+         };
+       } catch(err) {
+         alert("Erro ao aceder ao microfone. Aceita as permissões do browser.");
+       }
+    }
+  };
+}
 
 // Drawing Mode
 let isDraw=false, dCtx=null, dCanvas=null, isEraser=false;
-document.getElementById('facDrawBtn').onclick = (e) => {
-  e.preventDefault();
-  document.getElementById('drawOverlay').classList.add('open');
-  dCanvas = document.getElementById('drawCanvas');
-  const cont = document.getElementById('drawContainer');
-  dCanvas.width = cont.clientWidth; dCanvas.height = cont.clientHeight;
-  dCtx = dCanvas.getContext('2d');
-  dCtx.lineCap = 'round'; dCtx.lineJoin = 'round';
-  updateDrawStyle();
-};
-function updateDrawStyle(){
-  if(isEraser){ dCtx.globalCompositeOperation='destination-out'; dCtx.lineWidth=30; }
-  else{ dCtx.globalCompositeOperation='source-over'; dCtx.strokeStyle=document.getElementById('drawColor').value; dCtx.lineWidth=document.getElementById('drawSize').value; }
+const facDrawBtnEl = document.getElementById('facDrawBtn');
+if(facDrawBtnEl){
+  facDrawBtnEl.onclick = (e) => {
+    e.preventDefault();
+    const ov = document.getElementById('drawOverlay');
+    if(ov) ov.classList.add('open');
+    dCanvas = document.getElementById('drawCanvas');
+    const cont = document.getElementById('drawContainer');
+    if(dCanvas && cont){
+      dCanvas.width = cont.clientWidth;
+      dCanvas.height = cont.clientHeight;
+      dCtx = dCanvas.getContext('2d');
+      dCtx.lineCap = 'round';
+      dCtx.lineJoin = 'round';
+      updateDrawStyle();
+    }
+  };
 }
-document.getElementById('drawColor').onchange = () => { isEraser=false; updateDrawStyle(); };
-document.getElementById('drawSize').onchange = () => { updateDrawStyle(); };
-document.getElementById('drawEraser').onclick = () => { isEraser=true; updateDrawStyle(); };
+
+function updateDrawStyle(){
+  if(!dCtx) return;
+  const colEl = document.getElementById('drawColor');
+  const sizeEl = document.getElementById('drawSize');
+  if(isEraser){
+    dCtx.globalCompositeOperation='destination-out';
+    dCtx.lineWidth=30;
+  } else {
+    dCtx.globalCompositeOperation='source-over';
+    dCtx.strokeStyle=colEl?colEl.value:'#7c6af7';
+    dCtx.lineWidth=sizeEl?sizeEl.value:3;
+  }
+}
+
+const drawColorEl = document.getElementById('drawColor');
+if(drawColorEl) drawColorEl.onchange = () => { isEraser=false; updateDrawStyle(); };
+const drawSizeEl = document.getElementById('drawSize');
+if(drawSizeEl) drawSizeEl.onchange = () => { updateDrawStyle(); };
+const drawEraserEl = document.getElementById('drawEraser');
+if(drawEraserEl) drawEraserEl.onclick = () => { isEraser=true; updateDrawStyle(); };
 
 function closeDrawMode(save){
-  document.getElementById('drawOverlay').classList.remove('open');
+  const ov = document.getElementById('drawOverlay');
+  if(ov) ov.classList.remove('open');
   if(save && dCanvas){
      const dataUrl = dCanvas.toDataURL('image/png');
-     document.getElementById('facEditor').focus();
-     document.execCommand('insertImage', false, dataUrl);
+     const ed = document.getElementById('facEditor');
+     if(ed){
+       ed.focus();
+       document.execCommand('insertImage', false, dataUrl);
+     }
   }
 }
 
@@ -1602,34 +1658,35 @@ function closeDrawMode(save){
 const getX = (e) => e.offsetX || (e.touches ? e.touches[0].clientX : 0);
 const getY = (e) => e.offsetY || (e.touches ? e.touches[0].clientY - 60 : 0);
 
-const startDraw = (e) => { isDraw=true; dCtx.beginPath(); dCtx.moveTo(getX(e), getY(e)); };
-const draw = (e) => { if(!isDraw) return; e.preventDefault(); dCtx.lineTo(getX(e), getY(e)); dCtx.stroke(); };
+const startDraw = (e) => { if(!dCtx) return; isDraw=true; dCtx.beginPath(); dCtx.moveTo(getX(e), getY(e)); };
+const draw = (e) => { if(!isDraw || !dCtx) return; e.preventDefault(); dCtx.lineTo(getX(e), getY(e)); dCtx.stroke(); };
 const endDraw = () => { isDraw=false; };
 
-document.addEventListener('DOMContentLoaded', () => {
-    const cvs = document.getElementById('drawCanvas');
-    if(cvs) {
-        cvs.addEventListener('mousedown', startDraw);
-        cvs.addEventListener('mousemove', draw);
-        cvs.addEventListener('mouseup', endDraw);
-        cvs.addEventListener('touchstart', startDraw, {passive:false});
-        cvs.addEventListener('touchmove', draw, {passive:false});
-        cvs.addEventListener('touchend', endDraw);
-    }
-});
+function initDrawCanvasListeners(){
+  const cvs = document.getElementById('drawCanvas');
+  if(cvs) {
+    cvs.addEventListener('mousedown', startDraw);
+    cvs.addEventListener('mousemove', draw);
+    cvs.addEventListener('mouseup', endDraw);
+    cvs.addEventListener('touchstart', startDraw, {passive:false});
+    cvs.addEventListener('touchmove', draw, {passive:false});
+    cvs.addEventListener('touchend', endDraw);
+  }
+}
+initDrawCanvasListeners();
 
 // Patch open and save for Backgrounds
 const origOpenFacNote = openFacNote;
 openFacNote = function(id) {
    origOpenFacNote(id);
    const ed = document.getElementById('facEditor');
-   ed.className = 'fac-editor'; // reset class
+   if(ed) ed.className = 'fac-editor'; // reset class
    if(id) {
      const n = data.facNotes.find(x=>x.id===id);
      if(n && n.bg && n.bg !== 'none') {
         facNoteState.bg = n.bg;
         bgIndex = bgTypes.indexOf(n.bg);
-        ed.classList.add(n.bg);
+        if(ed) ed.classList.add(n.bg);
      } else { facNoteState.bg = 'none'; bgIndex = 0; }
    }
 };
