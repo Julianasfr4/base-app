@@ -893,13 +893,14 @@ async function saveData(){
 
 /* CADERNO JS */
 function startCaderno() {
-  initCadernoDOM();
-  syncOrderFromData();
+  let canvasWrap;
+  window.initCadernoDOM = function() { canvasWrap = document.getElementById('canvasWrap'); };
+  window.initCadernoDOM();
+  if(window.syncOrderFromData) window.syncOrderFromData();
 if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 let downloadsCap=null, currentId=null, tool='pen', color='#2B2620', wPx=2, undoStack={}, searchTerm='';
-let canvasWrap;
-function initCadernoDOM() { canvasWrap = document.getElementById('canvasWrap'); }
+
 const tabColors=['#2E6E75','#C1783A','#5B7A5B','#9C3B3B','#4A6FA5'];
 function tabFor(id){let h=0; for(const c of id) h=(h*31+c.charCodeAt(0))>>>0; return tabColors[h%tabColors.length];}
 function showLoading(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); }
@@ -922,7 +923,7 @@ function markPenActive(){ penActiveUntil=Date.now()+700; showPalmBadge(true); cl
 function showPalmBadge(on){ document.getElementById('palmBadge').classList.toggle('on', on); }
 function shouldIgnoreTouch(e){ return e.pointerType==='touch' && Date.now()<penActiveUntil; }
 
-function renderList(){
+window.renderList = function(){
   const list=document.getElementById('noteList');
   list.innerHTML='';
   const visible=order.filter(id=>{
@@ -1257,7 +1258,7 @@ function save(){
 
 
 
-syncOrderFromData(); renderList();
+if(window.syncOrderFromData) window.syncOrderFromData(); if(window.renderList) window.renderList();
 
 }
 
@@ -1466,8 +1467,8 @@ function render(){
       startCaderno();
       cadApp.dataset.init = '1';
     }
-    syncOrderFromData();
-    if(typeof renderList === 'function') renderList();
+    if(window.syncOrderFromData) window.syncOrderFromData();
+    if(window.renderList) window.renderList();
   } else {
     c.style.display = 'block';
     cadApp.style.display = 'none';
