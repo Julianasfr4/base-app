@@ -114,6 +114,98 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
 .cmdk-item { padding:14px 16px; border-radius:var(--r-sm); cursor:pointer; color:var(--ink-sub); display:flex; align-items:center; gap:12px; font-weight:500; font-size:14px; transition:background .1s, color .1s; }
 .cmdk-item:hover { background:var(--surface2); color:var(--accent); }
 
+
+/* CADERNO CSS */
+#cadernoApp {
+  height: 100%;
+  display: none;
+  flex: 1;
+  overflow: hidden;
+  font-family: -apple-system, sans-serif;
+  background: var(--sidebar);
+}
+:root{
+  --paper:#FDFBF6; --line:#E3D9C6; --line-strong:#D8CBAE; --ink:#2B2620; --muted:#948569;
+  --accent:#2E6E75; --accent-2:#C1783A; --sidebar:#F4EEE0; --card:#FFFFFF;
+  --danger:#B24444; --shadow:rgba(60,50,30,.12);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1E1B15; --line:#332C1F; --line-strong:#443A28; --ink:#EDE6D6; --muted:#93876E;
+    --accent:#57ADB5; --accent-2:#E0995F; --sidebar:#15130F; --card:#242019; --shadow:rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1E1B15; --line:#332C1F; --line-strong:#443A28; --ink:#EDE6D6; --muted:#93876E;
+  --accent:#57ADB5; --accent-2:#E0995F; --sidebar:#15130F; --card:#242019; --shadow:rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;}
+html,#cadernoApp {height:100%;margin:0;}
+#cadernoApp {font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--sidebar); color:var(--ink); overflow:hidden;}
+#app{display:flex; height:100%;}
+#sidebar{width:270px; min-width:270px; background:var(--sidebar); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:calc(14px + env(safe-area-inset-top,0px)) 12px 12px; transition:margin-left .2s ease;}
+#sidebar h1{font:700 13px/1 -apple-system,sans-serif; letter-spacing:1px; margin:0 6px 12px; color:var(--muted); text-transform:uppercase;}
+#newNoteBtn{background:var(--accent); color:#fff; border:none; border-radius:12px; padding:11px 12px; font:600 14px/1 -apple-system,sans-serif; cursor:pointer; margin-bottom:8px; box-shadow:0 2px 6px var(--shadow);}
+#newNoteBtn:active{transform:scale(.98);}
+.import-row{display:flex; gap:6px; margin-bottom:10px;}
+.import-btn{flex:1; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 6px; font:600 12px -apple-system,sans-serif; cursor:pointer; color:var(--ink);}
+#searchInput{margin:0 0 10px; padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink); font:13px -apple-system,sans-serif; outline:none;}
+#noteList{overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px;}
+.note-item{background:var(--card); border-radius:14px; padding:0; cursor:pointer; overflow:hidden; box-shadow:0 1px 3px var(--shadow); border:1px solid var(--line); display:flex; gap:0;}
+.note-item.active{outline:2px solid var(--accent); outline-offset:-2px;}
+.note-item .tab{width:6px; background:var(--tab,var(--accent));}
+.note-item .#cadernoApp {padding:10px 12px; min-width:0; flex:1;}
+.note-item .t{font:600 14px/1.3 Georgia,"Iowan Old Style",serif; margin:0 0 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.note-item .d{font:11px/1 -apple-system,sans-serif; color:var(--muted);}
+#empty-hint{color:var(--muted); font-size:13px; padding:16px 6px;}
+#sync-status{font:11px -apple-system,sans-serif; color:var(--muted); padding:10px 6px 0; display:flex; gap:6px; align-items:center;}
+#sync-dot{width:7px;height:7px;border-radius:50%;background:#5B8A5B;}
+#sync-dot.off{background:var(--danger);}
+
+#editor{flex:1; display:flex; flex-direction:column; min-width:0;}
+#toolbar{display:flex; align-items:center; gap:6px; padding:8px 12px; margin:10px 12px 0; border-radius:16px; background:var(--card); box-shadow:0 2px 10px var(--shadow); flex-wrap:wrap;}
+#menuBtn{display:none; background:none; border:none; color:var(--ink); font-size:20px; cursor:pointer; padding:2px 6px;}
+#titleInput{font:600 15px/1 Georgia,"Iowan Old Style",serif; border:none; background:transparent; color:var(--ink); flex:1; min-width:70px; outline:none;}
+.tool-btn{width:34px; height:34px; border-radius:9px; border:1px solid transparent; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--ink); font-size:16px;}
+.tool-btn.active{background:var(--line); border-color:var(--accent);}
+.swatch{width:19px; height:19px; border-radius:50%; border:2px solid transparent; cursor:pointer;}
+.swatch.active{border-color:var(--ink); transform:scale(1.15);}
+.w-btn{width:26px; height:26px; border-radius:50%; border:1px solid var(--line); background:var(--card); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+.w-btn.active{border-color:var(--accent); border-width:2px;}
+.w-btn span{background:var(--ink); border-radius:50%; display:block;}
+#divider{width:1px; height:22px; background:var(--line); margin:0 4px;}
+#deleteNoteBtn{color:var(--danger);}
+select#paperStyle{border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; font:12px -apple-system,sans-serif; padding:4px 6px;}
+.pcolor{width:19px;height:19px;border-radius:6px;border:2px solid var(--line);cursor:pointer;}
+.pcolor.active{border-color:var(--ink);}
+#palmBadge{font:10px -apple-system,sans-serif; color:var(--accent); border:1px solid var(--accent); border-radius:20px; padding:2px 8px; display:none; white-space:nowrap;}
+#palmBadge.on{display:inline-block;}
+
+#pageStrip{display:flex; gap:8px; align-items:center; padding:8px 24px 0; overflow-x:auto;}
+.page-pill{padding:6px 12px; border-radius:20px; background:var(--card); border:1px solid var(--line); font:12px -apple-system,sans-serif; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; box-shadow:0 1px 2px var(--shadow);}
+.page-pill.active{border-color:var(--accent); background:var(--line); font-weight:600;}
+.page-pill .del{color:var(--danger); font-size:11px; cursor:pointer;}
+#addPageBtn{padding:6px 12px; border-radius:20px; background:none; border:1px dashed var(--muted); color:var(--muted); font:12px -apple-system,sans-serif; cursor:pointer; white-space:nowrap;}
+
+#canvasWrap{flex:1; position:relative; overflow:auto; margin:10px 12px 12px; border-radius:16px; box-shadow:0 2px 10px var(--shadow); background-color:var(--pc,var(--paper));}
+#canvasWrap.style-lines{background-image:repeating-linear-gradient(var(--pc,var(--paper)) 0 31px, var(--line) 31px 32px); background-size:100% 32px;}
+#canvasWrap.style-grid{background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px); background-size:26px 26px;}
+#canvasWrap.style-dots{background-image:radial-gradient(var(--line-strong) 1.3px,transparent 1.3px); background-size:24px 24px;}
+#canvasWrap.style-blank{background-image:none;}
+#canvas{position:absolute; top:0; left:0; width:100%; height:1400px; touch-action:none;}
+#bgLayer{position:absolute; top:0; left:0; display:none; pointer-events:none;}
+.txt-box{position:absolute; min-width:40px; min-height:22px; font:20px/1.35 Georgia,"Iowan Old Style",serif; outline:none; padding:2px; white-space:pre-wrap;}
+#placeholder{display:flex; align-items:center; justify-content:center; height:100%; color:var(--muted); font:15px -apple-system,sans-serif; flex-direction:column; gap:10px; text-align:center; padding:20px;}
+#toast{position:fixed; bottom:18px; right:18px; background:var(--ink); color:var(--paper); padding:9px 16px; border-radius:10px; font:12px -apple-system,sans-serif; opacity:0; pointer-events:none; transition:opacity .2s; z-index:30;}
+#toast.show{opacity:1;}
+::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+@media (max-width:720px){
+  #sidebar{position:fixed; z-index:5; height:100%; margin-left:-270px; box-shadow:2px 0 12px rgba(0,0,0,.15);}
+  #sidebar.open{margin-left:0;}
+  #menuBtn{display:flex;}
+}
+
 /* ── WEATHER & HABITS & GRADES ── */
 .weather-widget { display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-sub); background:var(--surface2); padding:6px 14px; border-radius:99px; margin-bottom: 24px; border:1px solid var(--border); }
 .habit-row { display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border); }
@@ -497,6 +589,78 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+<!-- CADERNO APP -->
+<div id="cadernoApp">
+<div id="app">
+  <aside id="sidebar">
+    <h1>O meu caderno</h1>
+    <button id="newNoteBtn">+ Nova nota</button>
+    <div class="import-row">
+      <button id="importPdfBtn" class="import-btn">📄 PDF</button>
+      <button id="importDocxBtn" class="import-btn">📝 Word</button>
+    </div>
+    <input type="file" id="importPdfInput" accept="application/pdf" style="display:none">
+    <input type="file" id="importDocxInput" accept=".docx" style="display:none">
+    <input id="searchInput" placeholder="Procurar notas…">
+    <div id="noteList"></div>
+    <div id="sync-status"><span id="sync-dot"></span><span id="sync-text">A ligar…</span></div>
+  </aside>
+  <main id="editor">
+    <div id="toolbar">
+      <button id="menuBtn" title="Notas">☰</button>
+      <input id="titleInput" placeholder="Título da nota" disabled>
+      <button class="tool-btn active" data-tool="pen" title="Caneta">✎</button>
+      <button class="tool-btn" data-tool="highlighter" title="Marcador">▬</button>
+      <button class="tool-btn" data-tool="text" title="Texto">Ａ</button>
+      <button class="tool-btn" data-tool="eraser" title="Borracha">⌫</button>
+      <div id="divider"></div>
+      <span class="swatch active" style="background:#2B2620" data-color="#2B2620"></span>
+      <span class="swatch" style="background:#2E6E75" data-color="#2E6E75"></span>
+      <span class="swatch" style="background:#C1783A" data-color="#C1783A"></span>
+      <span class="swatch" style="background:#5B7A5B" data-color="#5B7A5B"></span>
+      <span class="swatch" style="background:#9C3B3B" data-color="#9C3B3B"></span>
+      <div id="divider"></div>
+      <button class="w-btn active" data-w="2"><span style="width:5px;height:5px"></span></button>
+      <button class="w-btn" data-w="4"><span style="width:8px;height:8px"></span></button>
+      <button class="w-btn" data-w="7"><span style="width:11px;height:11px"></span></button>
+      <div id="divider"></div>
+      <select id="paperStyle" title="Estilo de folha">
+        <option value="lines">Pautado</option>
+        <option value="grid">Quadriculado</option>
+        <option value="dots">Pontilhado</option>
+        <option value="blank">Liso</option>
+      </select>
+      <div id="divider"></div>
+      <span class="pcolor active" style="background:#FDFBF6" data-pcolor="#FDFBF6" title="Creme"></span>
+      <span class="pcolor" style="background:#FFFFFF" data-pcolor="#FFFFFF" title="Branco"></span>
+      <span class="pcolor" style="background:#EAF2F4" data-pcolor="#EAF2F4" title="Azul suave"></span>
+      <span class="pcolor" style="background:#FBEDEE" data-pcolor="#FBEDEE" title="Rosa suave"></span>
+      <span class="pcolor" style="background:#EDF3EA" data-pcolor="#EDF3EA" title="Verde suave"></span>
+      <span class="pcolor" style="background:#1E1B15" data-pcolor="#1E1B15" title="Preto"></span>
+      <div id="divider"></div>
+      <button class="tool-btn" id="undoBtn" title="Desfazer">↶</button>
+      <button class="tool-btn" id="exportPdfBtn" title="Exportar para PDF">⭳</button>
+      <button class="tool-btn" id="deleteNoteBtn" title="Eliminar nota">🗑</button>
+      <span id="palmBadge">✎ S Pen ativa</span>
+    </div>
+    <div id="pageStrip"></div>
+    <div id="canvasWrap" class="style-lines">
+      <div id="placeholder">
+        <div style="font:600 20px Georgia,serif">Bem-vinda ao teu caderno</div>
+        <div>Cria uma nota nova, ou importa um PDF ou Word para começares a anotar.<br>Tudo fica guardado e sincronizado automaticamente.</div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="toast"></div>
+
+</div>
+
 <!-- DRAW OVERLAY -->
 <div id="drawOverlay" class="draw-overlay">
   <div class="draw-tools">
@@ -727,6 +891,376 @@ async function saveData(){
   catch(e){ console.error('Erro ao guardar',e); }
 }
 
+/* CADERNO JS */
+function startCaderno() {
+  initCadernoDOM();
+  syncOrderFromData();
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let downloadsCap=null, currentId=null, tool='pen', color='#2B2620', wPx=2, undoStack={}, searchTerm='';
+let canvasWrap;
+function initCadernoDOM() { canvasWrap = document.getElementById('canvasWrap'); }
+const tabColors=['#2E6E75','#C1783A','#5B7A5B','#9C3B3B','#4A6FA5'];
+function tabFor(id){let h=0; for(const c of id) h=(h*31+c.charCodeAt(0))>>>0; return tabColors[h%tabColors.length];}
+function showLoading(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); }
+function hideLoading(){ document.getElementById('toast').classList.remove('show'); }
+
+/* --- migração: garante que toda a nota tem "pages" (páginas) --- */
+function normalizeNote(n){
+  if(!n.pages || !n.pages.length){
+    n.pages=[{strokes:n.strokes||[], texts:n.texts||[], paper:n.paper||'lines', color:n.color||'#FDFBF6'}];
+  }
+  if(typeof n.currentPage!=='number' || n.currentPage<0 || n.currentPage>=n.pages.length) n.currentPage=0;
+  return n;
+}
+function curPage(){ const n=notes[currentId]; return n ? n.pages[n.currentPage] : null; }
+function pageKey(){ return currentId+':'+(notes[currentId]?notes[currentId].currentPage:0); }
+
+/* --- Rejeição de palma (heurística para S Pen / caneta) --- */
+let penActiveUntil=0;
+function markPenActive(){ penActiveUntil=Date.now()+700; showPalmBadge(true); clearTimeout(markPenActive._t); markPenActive._t=setTimeout(()=>showPalmBadge(false),700); }
+function showPalmBadge(on){ document.getElementById('palmBadge').classList.toggle('on', on); }
+function shouldIgnoreTouch(e){ return e.pointerType==='touch' && Date.now()<penActiveUntil; }
+
+function renderList(){
+  const list=document.getElementById('noteList');
+  list.innerHTML='';
+  const visible=order.filter(id=>{
+    const n=notes[id]; if(!n) return false;
+    return !searchTerm || (n.title||'').toLowerCase().includes(searchTerm);
+  });
+  if(visible.length===0){list.innerHTML='<div id="empty-hint">'+(order.length===0?'Ainda não tens notas.':'Sem resultados.')+'</div>'; return;}
+  visible.forEach(id=>{
+    const n=notes[id]; normalizeNote(n);
+    const el=document.createElement('div');
+    el.className='note-item'+(id===currentId?' active':'');
+    const pageCount=n.pages.length;
+    el.innerHTML=`<div class="tab" style="background:${tabFor(id)}"></div><div class="body"><div class="t">${escapeHtml(n.title||'Sem título')}</div><div class="d">${pageCount} página${pageCount===1?'':'s'}</div></div>`;
+    el.onclick=()=>openNote(id);
+    list.appendChild(el);
+  });
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+document.getElementById('searchInput').oninput=(e)=>{ searchTerm=e.target.value.toLowerCase(); renderList(); };
+
+function openNote(id){
+  currentId=id; normalizeNote(notes[id]);
+  canvasWrap.innerHTML=`<img id="bgLayer"><svg id="canvas" xmlns="http://www.w3.org/2000/svg"><g id="strokesGroup"></g></svg><div id="textLayer" style="position:absolute;top:0;left:0;width:100%;"></div>`;
+  document.getElementById('titleInput').disabled=false;
+  document.getElementById('titleInput').value=notes[id].title||'';
+  syncPageControls();
+  renderList();
+  renderPageStrip();
+  drawAll();
+  attachCanvasEvents();
+}
+function syncPageControls(){
+  const p=curPage(); if(!p) return;
+  document.getElementById('paperStyle').value=p.paper||'lines';
+  applyPaperStyle(p.paper||'lines');
+  applyPageColor(p.color||'#FDFBF6');
+  document.querySelectorAll('.pcolor').forEach(x=>x.classList.toggle('active', x.dataset.pcolor===(p.color||'#FDFBF6')));
+}
+function applyPaperStyle(v){
+  canvasWrap.classList.remove('style-lines','style-grid','style-dots','style-blank');
+  canvasWrap.classList.add('style-'+v);
+}
+function applyPageColor(hex){ canvasWrap.style.setProperty('--pc', hex); }
+document.getElementById('paperStyle').onchange=(e)=>{
+  if(!currentId) return;
+  curPage().paper=e.target.value; applyPaperStyle(e.target.value); save();
+};
+document.querySelectorAll('.pcolor').forEach(s=>{
+  s.onclick=()=>{
+    if(!currentId) return;
+    curPage().color=s.dataset.pcolor;
+    applyPageColor(s.dataset.pcolor);
+    document.querySelectorAll('.pcolor').forEach(x=>x.classList.remove('active'));
+    s.classList.add('active');
+    save();
+  };
+});
+
+function renderPageStrip(){
+  const strip=document.getElementById('pageStrip');
+  const n=notes[currentId];
+  strip.innerHTML='';
+  if(!n) return;
+  n.pages.forEach((pg,i)=>{
+    const pill=document.createElement('div');
+    pill.className='page-pill'+(i===n.currentPage?' active':'');
+    pill.innerHTML=`<span>Pág. ${i+1}</span>`+(n.pages.length>1?`<span class="del" data-i="${i}">✕</span>`:'');
+    pill.onclick=(e)=>{
+      if(e.target.classList.contains('del')){
+        e.stopPropagation();
+        const idx=parseInt(e.target.dataset.i,10);
+        if(!confirm('Eliminar esta página?')) return;
+        n.pages.splice(idx,1);
+        if(n.currentPage>=n.pages.length) n.currentPage=n.pages.length-1;
+        renderPageStrip(); syncPageControls(); drawAll(); save();
+        return;
+      }
+      n.currentPage=i; renderPageStrip(); syncPageControls(); drawAll();
+    };
+    strip.appendChild(pill);
+  });
+  const add=document.createElement('button');
+  add.id='addPageBtn'; add.textContent='+ Página';
+  add.onclick=()=>{
+    n.pages.push({strokes:[], texts:[], paper:'lines', color:'#FDFBF6'});
+    n.currentPage=n.pages.length-1;
+    renderPageStrip(); syncPageControls(); drawAll(); renderList(); save();
+  };
+  strip.appendChild(add);
+}
+
+function drawAll(){
+  const p=curPage(); if(!p) return;
+  const bg=document.getElementById('bgLayer'), svg=document.getElementById('canvas');
+  if(p.bg){
+    bg.src=p.bg; bg.style.display='block'; bg.style.width=p.bgW+'px'; bg.style.height=p.bgH+'px';
+    svg.style.width=p.bgW+'px'; svg.style.height=p.bgH+'px';
+  } else {
+    bg.style.display='none'; svg.style.width='100%'; svg.style.height='1400px';
+  }
+  const g=document.getElementById('strokesGroup'); if(!g) return;
+  g.innerHTML='';
+  (p.strokes||[]).forEach(s=>{
+    const pl=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    pl.setAttribute('points',s.pts);
+    pl.setAttribute('fill','none');
+    pl.setAttribute('stroke',s.color);
+    pl.setAttribute('stroke-width',s.tool==='highlighter'?s.w*4:s.w);
+    pl.setAttribute('stroke-linecap','round');
+    pl.setAttribute('stroke-linejoin','round');
+    pl.setAttribute('opacity',s.tool==='highlighter'?0.35:1);
+    pl.style.cursor='pointer';
+    pl.onclick=(e)=>{ if(tool==='eraser'){ e.stopPropagation(); eraseStroke(s.id);} };
+    g.appendChild(pl);
+  });
+  const layer=document.getElementById('textLayer'); if(!layer) return;
+  layer.innerHTML='';
+  (p.texts||[]).forEach(t=>{
+    const d=document.createElement('div');
+    d.className='txt-box'; d.contentEditable='true'; d.style.left=t.x+'px'; d.style.top=t.y+'px'; d.style.color=t.color;
+    if(t.width) d.style.width=t.width+'px';
+    d.innerText=t.text;
+    d.onblur=()=>{ t.text=d.innerText; if(!t.text.trim()){ p.texts=p.texts.filter(x=>x.id!==t.id); drawAll(); } save();};
+    layer.appendChild(d);
+  });
+}
+
+function eraseStroke(id){
+  const p=curPage();
+  pushUndo();
+  p.strokes=p.strokes.filter(s=>s.id!==id);
+  drawAll(); save();
+}
+function pushUndo(){
+  const k=pageKey(); const p=curPage(); if(!p) return;
+  undoStack[k]=undoStack[k]||[];
+  undoStack[k].push(JSON.stringify({strokes:p.strokes,texts:p.texts}));
+  if(undoStack[k].length>40) undoStack[k].shift();
+}
+document.getElementById('undoBtn').onclick=()=>{
+  if(!currentId) return;
+  const k=pageKey(); const st=undoStack[k];
+  if(!st||!st.length) return;
+  const prev=JSON.parse(st.pop());
+  const p=curPage(); p.strokes=prev.strokes; p.texts=prev.texts;
+  drawAll(); save();
+};
+
+let drawing=false, curPts=[], tempPl=null, activePointerId=null;
+function attachCanvasEvents(){
+  const svg=document.getElementById('canvas');
+  svg.onpointerdown=(e)=>{
+    if(e.pointerType==='pen') markPenActive();
+    if(shouldIgnoreTouch(e)) return;
+    if(tool==='eraser') return;
+    if(drawing) return;
+    const r=svg.getBoundingClientRect();
+    const x=e.clientX-r.left+svg.parentElement.scrollLeft, y=e.clientY-r.top+svg.parentElement.scrollTop;
+    if(tool==='text'){ addText(x,y); return; }
+    drawing=true; activePointerId=e.pointerId; curPts=[[x,y]];
+    tempPl=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    tempPl.setAttribute('fill','none'); tempPl.setAttribute('stroke',color);
+    tempPl.setAttribute('stroke-width',tool==='highlighter'?wPx*4:wPx);
+    tempPl.setAttribute('opacity',tool==='highlighter'?0.35:1);
+    tempPl.setAttribute('stroke-linecap','round'); tempPl.setAttribute('stroke-linejoin','round');
+    document.getElementById('strokesGroup').appendChild(tempPl);
+    svg.setPointerCapture(e.pointerId);
+  };
+  svg.onpointermove=(e)=>{
+    if(e.pointerType==='pen') markPenActive();
+    if(!drawing || e.pointerId!==activePointerId) return;
+    if(shouldIgnoreTouch(e)) return;
+    const r=svg.getBoundingClientRect();
+    const x=e.clientX-r.left+svg.parentElement.scrollLeft, y=e.clientY-r.top+svg.parentElement.scrollTop;
+    curPts.push([x,y]);
+    tempPl.setAttribute('points',curPts.map(p=>p.join(',')).join(' '));
+  };
+  svg.onpointerup=(e)=>{
+    if(!drawing || (activePointerId!==null && e.pointerId!==activePointerId)) return;
+    drawing=false; activePointerId=null;
+    if(curPts.length>1){
+      pushUndo();
+      const p=curPage();
+      p.strokes=p.strokes||[];
+      p.strokes.push({id:'s'+Date.now()+Math.random().toString(36).slice(2,7), pts:curPts.map(pt=>pt.join(',')).join(' '), color, w:wPx, tool});
+      save();
+    }
+    curPts=[]; tempPl=null;
+  };
+  svg.onpointercancel=svg.onpointerup;
+}
+function addText(x,y){
+  const p=curPage(); p.texts=p.texts||[];
+  pushUndo();
+  const t={id:'t'+Date.now(), x, y, text:'', color};
+  p.texts.push(t);
+  drawAll(); save();
+  setTimeout(()=>{ const boxes=document.querySelectorAll('.txt-box'); const last=boxes[boxes.length-1]; if(last) last.focus(); },30);
+}
+
+document.querySelectorAll('.tool-btn[data-tool]').forEach(b=>{
+  b.onclick=()=>{ tool=b.dataset.tool; document.querySelectorAll('.tool-btn[data-tool]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); };
+});
+document.querySelectorAll('.swatch').forEach(s=>{
+  s.onclick=()=>{ color=s.dataset.color; document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('active')); s.classList.add('active'); };
+});
+document.querySelectorAll('.w-btn').forEach(b=>{
+  b.onclick=()=>{ wPx=parseFloat(b.dataset.w); document.querySelectorAll('.w-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); };
+});
+document.getElementById('titleInput').onchange=(e)=>{ if(!currentId) return; notes[currentId].title=e.target.value; save(); renderList(); };
+document.getElementById('deleteNoteBtn').onclick=()=>{
+  if(!currentId) return;
+  if(!confirm('Eliminar esta nota?')) return;
+  const id=currentId;
+  delete notes[id]; order=order.filter(x=>x!==id); currentId=null;
+  canvasWrap.innerHTML='<div id="placeholder"><div style="font:600 20px Georgia,serif">Bem-vinda ao teu caderno</div><div>Cria uma nota nova, ou importa um PDF ou Word para começares a anotar.<br>Tudo fica guardado e sincronizado automaticamente.</div></div>';
+  document.getElementById('titleInput').value=''; document.getElementById('titleInput').disabled=true;
+  document.getElementById('pageStrip').innerHTML='';
+  renderList();
+  if(db) db.collection('notes').doc(id).delete().catch(()=>{});
+};
+document.getElementById('menuBtn').onclick=()=>document.getElementById('sidebar').classList.toggle('open');
+
+async function createNoteFromData(data){
+  if(db){
+    try{ const ref=await db.collection('notes').add(data); order.unshift(ref.id); notes[ref.id]=data; openNote(ref.id); return; }
+    catch(e){}
+  }
+  const id='local'+Date.now(); notes[id]=data; order.unshift(id); openNote(id);
+}
+document.getElementById('newNoteBtn').onclick=()=>{
+  createNoteFromData({title:'Nova nota', pages:[{strokes:[], texts:[], paper:'lines', color:'#FDFBF6'}], currentPage:0, updatedAt:Date.now(), createdAt:Date.now()});
+};
+
+/* --- Importar PDF: cada página do PDF vira uma página da nota, como imagem de fundo para anotares por cima --- */
+document.getElementById('importPdfBtn').onclick=()=>document.getElementById('importPdfInput').click();
+document.getElementById('importPdfInput').onchange=async(e)=>{
+  const file=e.target.files[0]; e.target.value=''; if(!file) return;
+  if(!window.pdfjsLib){ alert('O importador de PDF não carregou. Tenta novamente.'); return; }
+  showLoading('A importar PDF…');
+  try{
+    const buf=await file.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+    const pages=[];
+    for(let i=1;i<=pdf.numPages;i++){
+      const page=await pdf.getPage(i);
+      const viewport=page.getViewport({scale:1.3});
+      const c=document.createElement('canvas'); c.width=viewport.width; c.height=viewport.height;
+      await page.render({canvasContext:c.getContext('2d'), viewport}).promise;
+      pages.push({strokes:[], texts:[], paper:'blank', color:'#FFFFFF', bg:c.toDataURL('image/jpeg',0.75), bgW:viewport.width, bgH:viewport.height});
+    }
+    await createNoteFromData({title:file.name.replace(/\.pdf$/i,''), pages, currentPage:0, updatedAt:Date.now(), createdAt:Date.now()});
+  }catch(err){ alert('Não foi possível importar este PDF.'); }
+  hideLoading();
+};
+
+/* --- Importar Word (.docx): texto extraído e paginado automaticamente --- */
+document.getElementById('importDocxBtn').onclick=()=>document.getElementById('importDocxInput').click();
+document.getElementById('importDocxInput').onchange=async(e)=>{
+  const file=e.target.files[0]; e.target.value=''; if(!file) return;
+  if(!window.mammoth){ alert('O importador de Word não carregou. Tenta novamente.'); return; }
+  showLoading('A importar Word…');
+  try{
+    const buf=await file.arrayBuffer();
+    const result=await mammoth.extractRawText({arrayBuffer:buf});
+    const text=(result.value||'').trim();
+    const chunkSize=1500;
+    const chunks=[]; for(let i=0;i<text.length;i+=chunkSize) chunks.push(text.slice(i,i+chunkSize));
+    if(!chunks.length) chunks.push('');
+    const pages=chunks.map(c=>({strokes:[], texts:[{id:'t'+Date.now()+Math.random().toString(36).slice(2,6), x:24, y:24, text:c, color:'#2B2620', width:640}], paper:'blank', color:'#FFFFFF'}));
+    await createNoteFromData({title:file.name.replace(/\.docx$/i,''), pages, currentPage:0, updatedAt:Date.now(), createdAt:Date.now()});
+  }catch(err){ alert('Não foi possível importar este documento Word (só .docx é suportado).'); }
+  hideLoading();
+};
+
+/* --- Exportar nota atual para PDF --- */
+function loadImg(src){ return new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=src; }); }
+document.getElementById('exportPdfBtn').onclick=async()=>{
+  const n=notes[currentId]; if(!n){ alert('Abre uma nota primeiro.'); return; }
+  if(!window.jspdf){ alert('O exportador de PDF não carregou. Tenta novamente.'); return; }
+  showLoading('A exportar PDF…');
+  try{
+    const { jsPDF }=window.jspdf;
+    let doc=null;
+    for(const p of n.pages){
+      const w=p.bgW||900, h=p.bgH||1400;
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const ctx=c.getContext('2d');
+      ctx.fillStyle=p.color||'#FFFFFF'; ctx.fillRect(0,0,w,h);
+      if(p.bg){ const img=await loadImg(p.bg); ctx.drawImage(img,0,0,w,h); }
+      (p.strokes||[]).forEach(s=>{
+        const pts=s.pts.split(' ').filter(Boolean).map(pt=>pt.split(',').map(Number));
+        if(pts.length<2) return;
+        ctx.beginPath();
+        pts.forEach(([x,y],idx)=> idx===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+        ctx.strokeStyle=s.color; ctx.lineWidth=s.tool==='highlighter'?s.w*4:s.w;
+        ctx.globalAlpha=s.tool==='highlighter'?0.35:1;
+        ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke(); ctx.globalAlpha=1;
+      });
+      (p.texts||[]).forEach(t=>{
+        ctx.fillStyle=t.color||'#2B2620'; ctx.font='20px Georgia, serif';
+        (t.text||'').split('\n').forEach((line,li)=> ctx.fillText(line, t.x, t.y+22+li*26));
+      });
+      const imgData=c.toDataURL('image/jpeg',0.85);
+      const orient=w>h?'l':'p';
+      if(!doc) doc=new jsPDF({orientation:orient, unit:'px', format:[w,h]});
+      else doc.addPage([w,h], orient);
+      doc.addImage(imgData,'JPEG',0,0,w,h);
+    }
+    const blob=doc.output('blob');
+    const filename=(n.title||'nota')+'.pdf';
+    if(downloadsCap){ await downloadsCap.save({filename, data:blob}); }
+    else{ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url); }
+  }catch(err){ alert('Não foi possível exportar esta nota.'); }
+  hideLoading();
+};
+
+
+
+
+function save(){
+  if(!currentId) return;
+  const id=currentId, n=notes[id]; 
+  if(n) n.updatedAt=Date.now();
+  renderList();
+  clearTimeout(saveTimers[id]);
+  saveTimers[id]=setTimeout(()=>{
+    saveData(); // saves to localStorage/Drive via base-app
+  },350);
+}
+
+
+
+
+syncOrderFromData(); renderList();
+
+}
+
 /* ════════════════════════════════════════
    GOOGLE — init
 ════════════════════════════════════════ */
@@ -922,9 +1456,25 @@ function renderWeekBars(){
 ════════════════════════════════════════ */
 function render(){
   buildNav(); renderWeekBars();
+  
   const c=document.getElementById('content');
+  const cadApp = document.getElementById('cadernoApp');
+  if (currentTab === 'faculdade') {
+    c.style.display = 'none';
+    cadApp.style.display = 'flex';
+    if (!cadApp.dataset.init) {
+      startCaderno();
+      cadApp.dataset.init = '1';
+    }
+    syncOrderFromData();
+    if(typeof renderList === 'function') renderList();
+  } else {
+    c.style.display = 'block';
+    cadApp.style.display = 'none';
+  }
+
   if     (currentTab==='hoje')                      c.innerHTML=renderTodayPage();
-  else if(currentTab==='faculdade')                 c.innerHTML=renderFaculdadePage();
+  /* faculdade handled by cadernoApp */
   else if(CATEGORIES.some(x=>x.id===currentTab))   c.innerHTML=renderTaskPage(currentTab);
   else if(currentTab==='agenda')                    c.innerHTML=renderAgendaPage();
   else if(currentTab==='notas')                     c.innerHTML=renderNotasPage();
