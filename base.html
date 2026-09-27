@@ -1666,13 +1666,13 @@ function renderFaculdadePage(){
 
   <div class="fac-toolbar">
     <input class="fac-search" id="facSearchInput" placeholder="🔍 Pesquisar notas…" value="${escapeHTML(facSearchQ)}">
-    <button class="btn btn-primary btn-sm" id="newFacNoteBtn">+ Nova nota</button>
+    <button class="btn btn-primary btn-sm" id="newNoteBtn">+ Nova nota</button>
   </div>
 
   <div class="fac-cats">${catChips}</div>
 
   <div class="fac-notes-grid">
-    <div class="fac-add-card" id="newFacNoteBtn2">
+    <div class="fac-add-card" id="newNoteBtn2">
       <div class="fac-add-card-icon">✦</div>
       <span>Nova nota</span>
     </div>
@@ -1959,8 +1959,8 @@ function attachHandlers(){
   const facSearch=document.getElementById('facSearchInput');if(facSearch) facSearch.oninput=()=>{facSearchQ=facSearch.value;render();};
 
   // new fac note buttons
-  const nfn=document.getElementById('newFacNoteBtn');if(nfn) nfn.onclick=()=>openFacNote(null);
-  const nfn2=document.getElementById('newFacNoteBtn2');if(nfn2) nfn2.onclick=()=>openFacNote(null);
+  const nfn=document.getElementById('newNoteBtn');if(nfn) nfn.onclick=()=>openFacNote(null);
+  const nfn2=document.getElementById('newNoteBtn2');if(nfn2) nfn2.onclick=()=>openFacNote(null);
 
   // general notes
   const newNoteBtn=document.getElementById('newNoteBtn');if(newNoteBtn) newNoteBtn.onclick=()=>openNote(null);
@@ -2403,7 +2403,7 @@ const cmdkActions = [
   {label:'📅 Ir para Calendário', run:()=>switchTab('calendario')},
   {label:'⏱️ Iniciar Foco (Pomodoro)', run:()=>openTimer(null)},
   {label:'➕ Nova Tarefa', run:()=>{switchTab('tarefas'); setTimeout(()=>document.getElementById('taskForm').style.display='grid', 100);}},
-  {label:'📝 Nova Nota da Faculdade', run:()=>{switchTab('faculdade'); document.getElementById('newFacNoteBtn').click();}}
+  {label:'📝 Nova Nota da Faculdade', run:()=>{switchTab('faculdade'); document.getElementById('newNoteBtn').click();}}
 ];
 
 function openCmdk(){ document.getElementById('cmdk').classList.add('open'); const i=document.getElementById('cmdkInput'); i.value=''; renderCmdk(''); setTimeout(()=>i.focus(),50); }
