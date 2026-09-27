@@ -14,6 +14,9 @@
 <style>
 :root {
   --bg:#0f0f13; --surface:#16161d; --surface2:#1e1e28;
+  --elev-1: 0 1px 0 rgba(255,255,255,0.04) inset, 0 2px 8px rgba(0,0,0,0.25);
+  --elev-2: 0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 28px rgba(0,0,0,0.35);
+  --ease: cubic-bezier(.22,1,.36,1);
   --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
   --ink:#eeedf0; --ink-sub:#8b8a96; --ink-ghost:rgba(255,255,255,0.28);
   --accent:#7c6af7; --accent-glow:rgba(124,106,247,0.18); --accent-light:rgba(124,106,247,0.12);
@@ -81,6 +84,35 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
 .dashboard-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:start;}
 @media(max-width:850px){.dashboard-grid{grid-template-columns:1fr;}}
 
+
+
+.btn, .icon-btn, .check, .habit-checkbox { transition: transform .12s var(--ease), opacity .12s, background .15s, border-color .15s; }
+.btn:active, .icon-btn:active { transform: scale(.96); }
+.check:active, .habit-checkbox:active { transform: scale(.85); }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;} }
+.task, .expense-row, .note-card, .grade-card { animation: fadeUp .35s var(--ease) backwards; }
+.glow-focus:focus-within { box-shadow: 0 0 0 1px var(--accent), 0 0 24px -4px var(--accent-glow); }
+
+/* Mobile bottom nav */
+@media(max-width:850px){
+  .sidebar { display:none !important; }
+  .bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:100; display:flex; justify-content:space-around; align-items:center; padding:12px 6px calc(12px + env(safe-area-inset-bottom,0px)); background:rgba(22,22,29,0.85); backdrop-filter:blur(24px) saturate(160%); -webkit-backdrop-filter:blur(24px) saturate(160%); border-top:1px solid var(--border); }
+  .bottom-nav button { all:unset; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:64px; justify-content:center; color:var(--ink-ghost); font-size:11px; font-weight:600; cursor:pointer; transition:color .15s var(--ease), transform .15s var(--ease); }
+  .bottom-nav button.active { color:var(--accent); transform:translateY(-2px); }
+  .bottom-nav .nav-emoji { font-size:22px; margin-bottom:4px;}
+  .main { padding-bottom:90px; }
+}
+@media(min-width:851px){ .bottom-nav { display:none; } }
+
+/* CMDK Palette */
+.cmdk-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,15,19,0.7); backdrop-filter:blur(10px); z-index:900; display:none; align-items:flex-start; justify-content:center; padding-top:12vh; }
+.cmdk-overlay.open { display:flex; }
+.cmdk-modal { background:var(--surface); border:1px solid var(--border2); border-radius:var(--r-xl); width:100%; max-width:560px; box-shadow:0 32px 80px rgba(0,0,0,.6); overflow:hidden; transform:scale(0.98); opacity:0; transition:all .2s var(--ease); }
+.cmdk-overlay.open .cmdk-modal { transform:scale(1); opacity:1; }
+.cmdk-input { width:100%; padding:20px 24px; background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--ink); font-size:17px; outline:none; font-family:var(--font-body); }
+.cmdk-results { max-height:360px; overflow-y:auto; padding:12px; }
+.cmdk-item { padding:14px 16px; border-radius:var(--r-sm); cursor:pointer; color:var(--ink-sub); display:flex; align-items:center; gap:12px; font-weight:500; font-size:14px; transition:background .1s, color .1s; }
+.cmdk-item:hover { background:var(--surface2); color:var(--accent); }
 
 /* ── WEATHER & HABITS & GRADES ── */
 .weather-widget { display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-sub); background:var(--surface2); padding:6px 14px; border-radius:99px; margin-bottom: 24px; border:1px solid var(--border); }
@@ -452,7 +484,17 @@ input,select,textarea{font-family:var(--font-body);} select{appearance:none;}
       <div id="weekBars"></div>
     </div>
   </aside>
+  <nav class="bottom-nav" id="bottomNav"></nav>
   <main class="main"><div id="content"></div></main>
+</div>
+
+
+<!-- CMDK PALETTE -->
+<div id="cmdk" class="cmdk-overlay">
+  <div class="cmdk-modal">
+    <input id="cmdkInput" class="cmdk-input" placeholder="Pesquisar ou executar uma ação... (Ex: Nova Tarefa)">
+    <div id="cmdkResults" class="cmdk-results"></div>
+  </div>
 </div>
 
 <!-- DRAW OVERLAY -->
@@ -1801,6 +1843,45 @@ async function fetchWeather(){
 }
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e=>console.error(e));
 fetchWeather();
+
+/* ── CMDK & MOBILE NAV LOGIC ── */
+const cmdkActions = [
+  {label:'🏠 Ir para Hoje', run:()=>switchTab('hoje')},
+  {label:'✅ Ir para Tarefas', run:()=>switchTab('tarefas')},
+  {label:'🎓 Ir para Faculdade', run:()=>switchTab('faculdade')},
+  {label:'💸 Ir para Dinheiro', run:()=>switchTab('dinheiro')},
+  {label:'📅 Ir para Calendário', run:()=>switchTab('calendario')},
+  {label:'⏱️ Iniciar Foco (Pomodoro)', run:()=>openTimer(null)},
+  {label:'➕ Nova Tarefa', run:()=>{switchTab('tarefas'); setTimeout(()=>document.getElementById('taskForm').style.display='grid', 100);}},
+  {label:'📝 Nova Nota da Faculdade', run:()=>{switchTab('faculdade'); document.getElementById('newFacNoteBtn').click();}}
+];
+
+function openCmdk(){ document.getElementById('cmdk').classList.add('open'); const i=document.getElementById('cmdkInput'); i.value=''; renderCmdk(''); setTimeout(()=>i.focus(),50); }
+function closeCmdk(){ document.getElementById('cmdk').classList.remove('open'); }
+function renderCmdk(q){
+  const list = cmdkActions.filter(a=>a.label.toLowerCase().includes(q.toLowerCase()));
+  const el=document.getElementById('cmdkResults');
+  el.innerHTML = list.map((a,i)=>`<div class="cmdk-item" data-i="${i}">${a.label}</div>`).join('') || `<div class="empty">Sem resultados</div>`;
+  el.querySelectorAll('[data-i]').forEach(n=> n.onclick=()=>{ list[+n.dataset.i].run(); closeCmdk(); });
+}
+const cmdkInput = document.getElementById('cmdkInput');
+if(cmdkInput) cmdkInput.oninput = e=>renderCmdk(e.target.value);
+document.addEventListener('keydown', e=>{
+  if((e.metaKey||e.ctrlKey) && e.key==='k'){ e.preventDefault(); openCmdk(); }
+  if(e.key==='Escape') closeCmdk();
+});
+const cmdkOverlay = document.getElementById('cmdk');
+if(cmdkOverlay) cmdkOverlay.onclick = e=>{ if(e.target===e.currentTarget) closeCmdk(); };
+
+/* Stagger List Animations Helper */
+function staggerLists(){
+  setTimeout(() => {
+    document.querySelectorAll('.task, .expense-row, .note-card, .grade-card').forEach((el,i)=> {
+       el.style.animationDelay = `${(i%20)*30}ms`;
+    });
+  }, 10);
+}
+
 loadData();
 
 </script>
