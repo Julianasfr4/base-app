@@ -9,7 +9,7 @@
 <title>Base — O meu espaço</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script src="https://apis.google.com/js/api.js" async defer onload="gapiLoaded()"></script>
 <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 <style>
 :root {
@@ -837,7 +837,25 @@ const FAC_COLORS = [
 /* ════════════════════════════════════════
    STATE
 ════════════════════════════════════════ */
-let data = {tasks:[],ideas:[],expenses:[],sessions:[],goal:0,events:[],notes:[],facNotes:[]};
+const defaultData = {
+  tasks: [],
+  ideas: [],
+  expenses: [],
+  sessions: [],
+  goal: 0,
+  events: [],
+  notes: [],
+  facNotes: [],
+  habits: [
+    {id:'h1', label:'Beber 2L de Água', done:false, emoji:'💧'},
+    {id:'h2', label:'Exercício (30m)', done:false, emoji:'🏃‍♂️'},
+    {id:'h3', label:'Leitura (15m)', done:false, emoji:'📚'}
+  ],
+  subjects: [],
+  incomes: []
+};
+let data = JSON.parse(JSON.stringify(defaultData));
+if (typeof order === 'undefined') { window.order = []; }
 let currentTab  = 'hoje';
 let calDate     = new Date();
 let selectedDay = null;
@@ -2266,7 +2284,7 @@ function initDrawCanvasListeners(){
     cvs.addEventListener('touchend', endDraw);
   }
 }
-initDrawCanvasListeners();
+window.addEventListener('DOMContentLoaded', () => initDrawCanvasListeners());
 
 // Patch open and save for Backgrounds
 const origOpenFacNote = openFacNote;
@@ -2392,7 +2410,7 @@ async function fetchWeather(){
     if(currentTab==='hoje') render();
   }catch(e){}
 }
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e=>console.error(e));
+if('serviceWorker' in navigator) if(window.location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW fail',e)).catch(e=>console.error(e));
 fetchWeather();
 
 /* ── CMDK & MOBILE NAV LOGIC ── */
