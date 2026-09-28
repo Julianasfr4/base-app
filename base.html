@@ -577,8 +577,7 @@ select#paperStyle{border:1px solid var(--line); background:var(--card); color:va
     </div>
   </aside>
   <nav class="bottom-nav" id="bottomNav"></nav>
-  <main class="main"><div id="content"></div></main>
-</div>
+  <main class="main" id="mainWrapper"><div id="content"></div></main>
 
 
 <!-- CMDK PALETTE -->
@@ -786,6 +785,7 @@ select#paperStyle{border:1px solid var(--line); background:var(--card); color:va
   </div>
 </div>
 
+</div>
 <script>
 /* ════════════════════════════════════════
    CONSTANTES
@@ -1475,9 +1475,9 @@ function renderWeekBars(){
 ════════════════════════════════════════ */
 
 window.openCadernoFull = function() {
-  const c = document.getElementById('content');
+  const mainWrap = document.getElementById('mainWrapper');
   const cadApp = document.getElementById('cadernoApp');
-  c.style.display = 'none';
+  if (mainWrap) mainWrap.style.display = 'none';
   cadApp.style.display = 'flex';
   if (!cadApp.dataset.init) {
     startCaderno();
@@ -1491,7 +1491,9 @@ function render(){
   buildNav(); renderWeekBars();
   
   const c=document.getElementById('content');
+  const mainWrap = document.getElementById('mainWrapper');
   const cadApp = document.getElementById('cadernoApp');
+  if (mainWrap) mainWrap.style.display = 'block';
   c.style.display = 'block';
   cadApp.style.display = 'none';
 

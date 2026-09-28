@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Teste Samsung Notes</title>
+  <!-- Importamos a biblioteca Perfect-Freehand para o traço realista -->
+  <script src="https://cdn.jsdelivr.net/npm/perfect-freehand"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: #0f0f13; color: #eeedf0; display:flex; flex-direction:column; height: 100vh; overflow:hidden; }
+    .toolbar { background: #1e1e28; padding: 12px 24px; display: flex; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10; align-items: center; flex-wrap: wrap;}
+    button { padding: 8px 16px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #eeedf0; border-radius: 8px; font-family: inherit; font-weight: 500; transition: all 0.2s;}
+    button.active { background: #7c6af7; color: white; border-color: #7c6af7; }
+    .scroll-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; background: #16161d; }
+    
+    /* Fundos de Página */
+    .bg-ruled { background-image: repeating-linear-gradient(transparent, transparent 31px, rgba(255,255,255,0.1) 31px, rgba(255,255,255,0.1) 32px); background-attachment: local; }
+    
+    .editor-container { position: relative; min-height: 100%; width: 100%; max-width: 900px; margin: 0 auto; background: #16161d;}
+    .text-layer { outline: none; padding: 40px; min-height: 100vh; font-size: 16px; line-height: 1.6; z-index: 1; position: relative; }
+    .canvas-layer { position: absolute; top: 0; left: 0; touch-action: none; pointer-events: none; z-index: 2; }
+    /* pointer-events muda via JS: auto para desenhar, none para escrever texto */
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button id="btnType" class="active">⌨️ Escrever Texto</button>
+    <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.2); margin: 0 8px;"></div>
+    <button id="btnPen">🖋️ Caneta</button>
+    <button id="btnHighlighter">🖍️ Marcador</button>
+    <button id="btnEraser">🧹 Borracha</button>
+    <input type="color" id="colorPicker" value="#7c6af7" style="cursor:pointer; background:none; border:none; width:32px; height:32px;">
+    <input type="range" id="sizePicker" min="1" max="15" value="3">
+    <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.2); margin: 0 8px;"></div>
+    <button id="btnFinger" title="Ativa isto se não tiveres S-Pen e quiseres desenhar com o dedo">👆 Desenho c/ Dedo: OFF</button>
+    <button id="btnClear" style="color: #f87171; border-color: #f87171;">🗑️ Limpar Desenhos</button>
+  </div>
+  
+  <div class="scroll-wrapper bg-ruled" id="scrollWrapper">
+    <div class="editor-container" id="editorContainer">
+      <div class="text-layer" id="textLayer" contenteditable="true">
+        <h1 style="font-family: serif; font-size: 38px;">O Novo Samsung Notes 🚀</h1>
+        <p>Toca em "Escrever Texto" para digitares no teclado.</p>
+        <p>Depois, escolhe a "Caneta", pega na tua <strong>S-Pen</strong> (ou no rato) e desenha livremente por cima e à volta do texto! A rejeição de palma (Palm Rejection) está ativada: o ecrã só desenha com a caneta; se tentares com o dedo, ele apenas faz scroll da página (a não ser que atives o Desenho c/ Dedo em cima).</p>
+        <br><br><br><br>
+      </div>
+      <canvas class="canvas-layer" id="drawCanvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+    const editorContainer = document.getElementById('editorContainer');
+
+    let mode = 'type'; // type, pen, highlighter, eraser
+    let fingerDraw = false;
+    let strokes = []; // Guarda as linhas todas: { tool, color, size, points: [{x,y,pressure}] }
+    let currentStroke = null;
+
+    // Redimensiona o canvas dinamicamente para ter a altura do texto
+    const resizeObserver = new ResizeObserver(() => {
+      canvas.width = editorContainer.clientWidth;
+      canvas.height = Math.max(editorContainer.clientHeight, window.innerHeight);
+      render();
+    });
+    resizeObserver.observe(editorContainer);
+
+    // Controlos da Interface
+    const btns = {
+      type: document.getElementById('btnType'),
+      pen: document.getElementById('btnPen'),
+      highlighter: document.getElementById('btnHighlighter'),
+      eraser: document.getElementById('btnEraser')
+    };
+    
+    const setMode = (m) => {
+      mode = m;
+      Object.values(btns).forEach(b => b.classList.remove('active'));
+      btns[m].classList.add('active');
+      // Se for texto, a canvas deixa a passagem de cliques para o texto. Se for desenho, a canvas absorve o toque.
+      canvas.style.pointerEvents = (mode === 'type') ? 'none' : 'auto';
+    };
+    
+    Object.keys(btns).forEach(k => btns[k].onclick = () => setMode(k));
+    
+    document.getElementById('btnFinger').onclick = (e) => {
+      fingerDraw = !fingerDraw;
+      e.target.textContent = `👆 Desenho c/ Dedo: ${fingerDraw ? 'ON' : 'OFF'}`;
+      e.target.classList.toggle('active', fingerDraw);
+    };
+
+    document.getElementById('btnClear').onclick = () => { strokes = []; render(); };
+
+    const getColor = () => document.getElementById('colorPicker').value;
+    const getSize = () => parseFloat(document.getElementById('sizePicker').value);
+
+    // Função que converte o polígono do Perfect-Freehand num caminho SVG para ser desenhado no Canvas
+    function getSvgPathFromStroke(stroke) {
+      if (!stroke.length) return '';
+      const d = stroke.reduce((acc, [x0, y0], i, arr) => {
+        const [x1, y1] = arr[(i + 1) % arr.length];
+        acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+        return acc;
+      }, ['M', ...stroke[0], 'Q']);
+      d.push('Z');
+      return d.join(' ');
+    }
+
+    // POINTER EVENTS (Magia da S-Pen)
+    let isDrawing = false;
+    
+    canvas.addEventListener('pointerdown', e => {
+      if (mode === 'type') return;
+      
+      // Palm Rejection: Só permite desenhar com "pen" (S-Pen), rato, ou toque (se o dedo estiver ligado)
+      if (e.pointerType === 'touch' && !fingerDraw) {
+        // Se for dedo e o modo for S-Pen, deixa a página fazer Scroll passando o toque adiante!
+        canvas.style.pointerEvents = 'none';
+        setTimeout(() => { canvas.style.pointerEvents = 'auto'; }, 500);
+        return; 
+      }
+      
+      e.preventDefault();
+      isDrawing = true;
+      const rect = canvas.getBoundingClientRect();
+      // Lê a pressão da S-Pen (se existir), senão usa 0.5
+      const pressure = (e.pointerType === 'pen' && e.pressure > 0) ? e.pressure : 0.5;
+      
+      currentStroke = {
+        tool: mode,
+        color: getColor(),
+        size: getSize(),
+        points: [{x: e.clientX - rect.left, y: e.clientY - rect.top, pressure}]
+      };
+      strokes.push(currentStroke);
+    });
+
+    canvas.addEventListener('pointermove', e => {
+      if (!isDrawing || !currentStroke) return;
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      // getCoalescedEvents capta os micro-movimentos rápidos da S-Pen
+      const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      
+      for (let ev of events) {
+         const pressure = (ev.pointerType === 'pen' && ev.pressure > 0) ? ev.pressure : 0.5;
+         const point = {x: ev.clientX - rect.left, y: ev.clientY - rect.top, pressure};
+         
+         if (mode === 'eraser') {
+           // Borracha: se passar perto de um ponto de um traço, apaga a linha inteira!
+           strokes = strokes.filter(s => {
+              return !s.points.some(p => Math.hypot(p.x - point.x, p.y - point.y) < 25);
+           });
+         } else {
+           currentStroke.points.push(point);
+         }
+      }
+      render();
+    });
+
+    const endDraw = (e) => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      currentStroke = null;
+      render();
+    };
+    canvas.addEventListener('pointerup', endDraw);
+    canvas.addEventListener('pointercancel', endDraw);
+    canvas.addEventListener('pointerout', endDraw);
+
+    // Motor de Renderização (Desenha todos os vetores no Canvas)
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (const s of strokes) {
+        if (s.points.length === 0) continue;
+        
+        ctx.fillStyle = s.color;
+        // O marcador usa 'screen' num tema escuro para fundir a cor com o texto
+        ctx.globalCompositeOperation = s.tool === 'highlighter' ? 'screen' : 'source-over';
+        ctx.globalAlpha = s.tool === 'highlighter' ? 0.3 : 1.0;
+
+        // Opções do traço variável (Grossura depende da pressão da S-Pen)
+        const options = {
+          size: s.tool === 'highlighter' ? s.size * 8 : s.size * 3,
+          thinning: s.tool === 'highlighter' ? -0.2 : 0.6,
+          smoothing: 0.6,
+          streamline: 0.5,
+          simulatePressure: true // Ajuda a fingir pressão se desenhares com rato
+        };
+
+        const pfPoints = s.points.map(p => [p.x, p.y, p.pressure]);
+        const outline = perfectFreehand.getStroke(pfPoints, options);
+        const pathData = getSvgPathFromStroke(outline);
+        
+        const path = new Path2D(pathData);
+        ctx.fill(path);
+      }
+      
+      ctx.globalAlpha = 1.0;
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  </script>
+</body>
+</html>
