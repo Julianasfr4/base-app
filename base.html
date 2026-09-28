@@ -1586,7 +1586,7 @@ function renderTodayPage(){
       <div class="card-title">🌱 Hábitos Diários</div>
       <div class="habit-list">
         ${data.habits.map(h => {
-           const isDone = h.history.includes(today);
+           const isDone = (h.history || []).includes(today);
            return `<div class="habit-row" onclick="toggleHabit('${h.id}')" style="cursor:pointer;">
              <div class="habit-info">
                <div class="habit-checkbox ${isDone ? 'done' : ''}">${isDone ? '✓' : ''}</div>
