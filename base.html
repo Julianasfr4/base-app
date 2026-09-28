@@ -1473,27 +1473,30 @@ function renderWeekBars(){
 /* ════════════════════════════════════════
    RENDER ROUTER
 ════════════════════════════════════════ */
+
+window.openCadernoFull = function() {
+  const c = document.getElementById('content');
+  const cadApp = document.getElementById('cadernoApp');
+  c.style.display = 'none';
+  cadApp.style.display = 'flex';
+  if (!cadApp.dataset.init) {
+    startCaderno();
+    cadApp.dataset.init = '1';
+  }
+  if(window.syncOrderFromData) window.syncOrderFromData();
+  if(window.renderList) window.renderList();
+};
+
 function render(){
   buildNav(); renderWeekBars();
   
   const c=document.getElementById('content');
   const cadApp = document.getElementById('cadernoApp');
-  if (currentTab === 'faculdade') {
-    c.style.display = 'none';
-    cadApp.style.display = 'flex';
-    if (!cadApp.dataset.init) {
-      startCaderno();
-      cadApp.dataset.init = '1';
-    }
-    if(window.syncOrderFromData) window.syncOrderFromData();
-    if(window.renderList) window.renderList();
-  } else {
-    c.style.display = 'block';
-    cadApp.style.display = 'none';
-  }
+  c.style.display = 'block';
+  cadApp.style.display = 'none';
 
   if     (currentTab==='hoje')                      c.innerHTML=renderTodayPage();
-  /* faculdade handled by cadernoApp */
+  else if(currentTab==='faculdade')                 c.innerHTML=renderFaculdadePage();
   else if(CATEGORIES.some(x=>x.id===currentTab))   c.innerHTML=renderTaskPage(currentTab);
   else if(currentTab==='agenda')                    c.innerHTML=renderAgendaPage();
   else if(currentTab==='notas')                     c.innerHTML=renderNotasPage();
@@ -1633,8 +1636,13 @@ function renderFaculdadePage(){
 
   return `<div class="page-header">
     <div class="page-eyebrow" style="color:var(--fac)">📚 Categoria</div>
-    <h1 class="page-title">Faculdade</h1>
-    <p class="page-sub">${pending.length} tarefa${pending.length!==1?'s':''} pendente${pending.length!==1?'s':''} · ${data.facNotes.length} nota${data.facNotes.length!==1?'s':''}</p>
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <div>
+        <h1 class="page-title">Faculdade</h1>
+        <p class="page-sub">${pending.length} tarefa${pending.length!==1?'s':''} pendente${pending.length!==1?'s':''} · ${data.facNotes.length} nota${data.facNotes.length!==1?'s':''}</p>
+      </div>
+      <button class="btn-hero" onclick="window.openCadernoFull()" style="background:var(--fac); color:var(--bg);">✏️ Abrir Caderno S-Pen</button>
+    </div>
   </div>
 
   <!-- TAREFAS -->
